@@ -56,20 +56,6 @@
             </button>
         </form>
 
-        <!-- Demo Credentials -->
-        <div class="mt-6 p-4 rounded-xl border border-gray-700" style="background:#0B0F1A;">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Demo Accounts <span class="text-gray-600">(password: <code class="text-gray-400">password</code>)</span></p>
-            <div class="grid grid-cols-2 gap-1 text-xs text-gray-400">
-                <div><span class="text-blue-400">admin@altumcredo.com</span> — Admin</div>
-                <div><span class="text-blue-400">md@altumcredo.com</span> — MD</div>
-                <div><span class="text-blue-400">yogesh.pawar@altumcredo.com</span> — CISO</div>
-                <div><span class="text-blue-400">vishal@altumcredo.com</span> — IT Lead</div>
-                <div><span class="text-blue-400">prashant@altumcredo.com</span> — App Lead</div>
-                <div><span class="text-blue-400">aditi.talvalkar@altumcredo.com</span> — HR Head</div>
-                <div><span class="text-blue-400">kumar@altumcredo.com</span> — IT L1</div>
-                <div><span class="text-blue-400">rahul@altumcredo.com</span> — Employee</div>
-            </div>
-        </div>
 
     </div>
 </div>

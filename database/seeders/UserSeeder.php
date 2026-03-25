@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
             User::create([
                 'name'     => $data['name'],
                 'email'    => $data['email'],
-                'password' => Hash::make('password'),
+                'password' => Hash::make($data['role'] . '@123'),
                 'role'     => $data['role'],
                 'department' => $data['department'],
                 'is_active'=> true,

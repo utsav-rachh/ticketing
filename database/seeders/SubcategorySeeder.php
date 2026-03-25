@@ -1,0 +1,120 @@
+<?php
+namespace Database\Seeders;
+
+use App\Models\Category;
+use App\Models\Subcategory;
+use Illuminate\Database\Seeder;
+
+class SubcategorySeeder extends Seeder
+{
+    public function run(): void
+    {
+        $data = [
+            'Rapid Sales' => [
+                ['Login Issue','high'],['Report Generation Error','medium'],['Data Sync Failure','high'],
+                ['Slow Performance','low'],['Module Access Denied','medium'],['Export Failure','medium'],
+                ['User Role/Permission Error','medium'],['Session Timeout','low'],['Data Import Failure','medium'],
+                ['Notification Not Received','low'],
+            ],
+            'A5 Technical' => [
+                ['Application Crash','critical'],['Database Connection Error','critical'],['API Timeout','high'],
+                ['Authentication Failure','high'],['Data Corruption','critical'],['Integration Error','high'],
+                ['Batch Processing Failure','high'],['Scheduled Job Not Running','medium'],['Memory Overflow','high'],
+                ['Version Mismatch','medium'],
+            ],
+            'CRM' => [
+                ['Contact Sync Issue','medium'],['Pipeline Error','high'],['Email Integration Failure','high'],
+                ['Dashboard Not Loading','medium'],['Custom Field Error','low'],['Lead Assignment Issue','medium'],
+                ['Report Filter Error','low'],['Duplicate Record','low'],['Workflow Automation Failure','medium'],
+            ],
+            'ERP' => [
+                ['Transaction Posting Error','critical'],['Ledger Mismatch','high'],['Inventory Sync Failure','high'],
+                ['Purchase Order Issue','medium'],['Report Discrepancy','medium'],['GL Account Mapping Error','high'],
+                ['Tax Calculation Error','high'],['Vendor Master Issue','medium'],['Budget vs Actual Variance','medium'],
+            ],
+            'Email & Communication' => [
+                ['Outlook Not Working','high'],['Email Delivery Failure','high'],['Calendar Sync Issue','medium'],
+                ['Teams Call Quality','medium'],['Distribution List Error','medium'],['Auto-Reply Not Working','low'],
+                ['Attachment Size Error','low'],['Spam Filter Issue','medium'],
+            ],
+            'Laptop' => [
+                ['Battery Draining Fast','medium'],['Screen Flickering','high'],['Keyboard Malfunction','medium'],
+                ['Touchpad Not Working','medium'],['Overheating','high'],['Blue Screen Error (BSOD)','critical'],
+                ['Slow Boot / Startup','medium'],['WiFi Card Failure','high'],['USB Port Damage','medium'],
+                ['Hinge Broken','low'],['Charging Port Issue','medium'],['Speaker/Audio Not Working','medium'],
+                ['Camera Not Working','low'],['Software Installation Request','low'],['OS Re-installation Required','high'],
+            ],
+            'Desktop' => [
+                ['Monitor No Display','high'],['Power Supply Failure','critical'],['RAM Issue / Upgrade','medium'],
+                ['Hard Drive Failure','critical'],['Fan Noise / Overheating','high'],['Motherboard Issue','critical'],
+                ['Graphics Card Error','high'],['Boot Loop','high'],['Peripheral Not Detected','medium'],
+                ['BIOS Error','high'],['Slow Performance','medium'],['Software Installation Request','low'],
+            ],
+            'Printer' => [
+                ['Paper Jam','low'],['Toner Low / Replacement','low'],['Print Quality Poor','low'],
+                ['Network Printer Offline','medium'],['Scanner Not Working','medium'],['Driver Issue','medium'],
+                ['Print Spooler Error','medium'],['Duplex Printing Failure','low'],['Printer Not Detected','medium'],
+                ['Color Calibration Issue','low'],
+            ],
+            'Internet / Network' => [
+                ['WiFi Not Connecting','high'],['Slow Internet Speed','medium'],['VPN Connection Failed','high'],
+                ['Network Drive Inaccessible','high'],['IP Conflict','high'],['DNS Resolution Error','high'],
+                ['Firewall Blocking Access','high'],['Proxy Configuration Error','medium'],['LAN Cable / Port Issue','medium'],
+                ['Network Printer Connectivity','medium'],
+            ],
+            'Server' => [
+                ['Server Down / Unresponsive','critical'],['High CPU / Memory Usage','high'],['Disk Space Full','high'],
+                ['Backup Failure','high'],['SSL Certificate Expiry','high'],['Service Crash / Restart','critical'],
+                ['Memory Leak Detected','high'],['Patch / Update Required','medium'],['Active Directory Issue','high'],
+                ['File Permission Error','medium'],
+            ],
+            'Accessories' => [
+                ['Mouse Not Working','low'],['Keyboard Damage','low'],['Headset Audio Issue','low'],
+                ['Webcam Malfunction','medium'],['Docking Station Failure','medium'],['Monitor Cable Faulty','medium'],
+                ['External HDD Not Detected','medium'],['Charger / Adapter Not Working','medium'],['USB Hub Issue','low'],
+                ['Projector Malfunction','medium'],
+            ],
+            'Facility Management' => [
+                ['AC Not Working / Temperature Issue','high'],['Lighting Issue / Bulb Replacement','low'],
+                ['Washroom Maintenance','medium'],['Pest Control Request','low'],['Fire Safety Equipment Check','medium'],
+                ['Parking Issue','low'],['Elevator Malfunction','high'],['Water Dispenser Issue','medium'],
+                ['Housekeeping Request','low'],['CCTV / Security Issue','high'],['Door Lock / Access Card Issue','high'],
+            ],
+            'Office Supplies' => [
+                ['Stationery Request','low'],['Pantry Supplies Running Low','low'],['Furniture Repair / Replacement','medium'],
+                ['Whiteboard / Marker Request','low'],['ID Card Issue / Replacement','medium'],
+                ['Visiting Card Printing','low'],['Letterhead / Envelope Printing','low'],
+            ],
+            'Travel & Transport' => [
+                ['Cab Booking Issue','medium'],['Travel Reimbursement Delay','medium'],['Hotel Booking Request','low'],
+                ['Visa Assistance Request','medium'],['Flight Booking / Change','medium'],
+                ['Travel Policy Clarification','low'],['Travel Insurance Query','low'],
+            ],
+            'HR Queries' => [
+                ['Leave Balance Query','low'],['Payslip Issue / Discrepancy','high'],['PF / ESI Query','medium'],
+                ['Mediclaim / Health Insurance','medium'],['Offer Letter / Experience Letter','medium'],
+                ['Attendance Correction Request','medium'],['Policy Clarification','low'],
+                ['Salary Revision Query','medium'],['Tax Declaration / Investment Proof','medium'],['Training Request','low'],
+            ],
+            'Onboarding / Offboarding' => [
+                ['New Joinee Setup / Induction','high'],['Asset Handover / Collection','medium'],['Exit Formalities','medium'],
+                ['Access Revocation Request','high'],['Knowledge Transfer Planning','medium'],
+                ['Final Settlement Query','medium'],['Relieving Letter Request','medium'],
+            ],
+        ];
+
+        foreach ($data as $categoryName => $subcats) {
+            $category = Category::where('name', $categoryName)->first();
+            if (!$category) continue;
+            foreach ($subcats as $i => [$name, $priority]) {
+                Subcategory::create([
+                    'category_id'      => $category->id,
+                    'name'             => $name,
+                    'default_priority' => $priority,
+                    'is_active'        => true,
+                    'sort_order'       => $i + 1,
+                ]);
+            }
+        }
+    }
+}

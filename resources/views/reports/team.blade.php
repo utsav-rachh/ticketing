@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Team Performance Report')
 @section('content')
-<a href="{{ route('reports.index') }}" class="text-indigo-600 hover:underline text-sm mb-4 block">&larr; Reports</a>
+<a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
 <h2 class="text-xl font-bold text-gray-700 mb-6">Team Performance Report</h2>
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">
@@ -20,7 +20,7 @@
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-3 font-medium text-gray-800">{{ $eng->name }}</td>
                 <td class="px-6 py-3">
-                    <span class="px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700">{{ str_replace('_',' ', $eng->role) }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs bg-brand-100 text-brand-700">{{ str_replace('_',' ', $eng->role) }}</span>
                 </td>
                 <td class="px-6 py-3 text-right text-gray-700">{{ $eng->total_assigned }}</td>
                 <td class="px-6 py-3 text-right text-green-600 font-semibold">{{ $eng->resolved_count }}</td>

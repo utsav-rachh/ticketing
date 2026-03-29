@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Priority Distribution Report')
 @section('content')
-<a href="{{ route('reports.index') }}" class="text-indigo-600 hover:underline text-sm mb-4 block">&larr; Reports</a>
+<a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
 <h2 class="text-xl font-bold text-gray-700 mb-6">Priority Distribution Report</h2>
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">
@@ -27,7 +27,7 @@
                     @if($total > 0)
                         {{ round($row->total / $total * 100, 1) }}%
                         <div class="w-32 bg-gray-200 rounded-full h-1.5 mt-1 ml-auto">
-                            <div class="h-1.5 rounded-full bg-indigo-500" style="width: {{ round($row->total / $total * 100) }}%"></div>
+                            <div class="h-1.5 rounded-full bg-brand-500" style="width: {{ round($row->total / $total * 100) }}%"></div>
                         </div>
                     @else
                         0%

@@ -34,7 +34,7 @@
             <div class="space-y-3">
                 @foreach($ticket->activities as $act)
                 <div class="flex gap-3 text-sm">
-                    <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
                         {{ strtoupper(substr($act->user->name ?? 'S', 0, 1)) }}
                     </div>
                     <div>
@@ -50,8 +50,8 @@
             <form method="POST" action="{{ route('tickets.activity', $ticket) }}" class="mt-4 flex gap-2">
                 @csrf
                 <input type="text" name="description" required placeholder="Add a note..."
-                    class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">Add Note</button>
+                    class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                <button type="submit" class="bg-brand-500 text-white px-4 py-2 rounded text-sm hover:bg-brand-600">Add Note</button>
             </form>
             @endcan
         </div>
@@ -113,7 +113,7 @@
                     <option value="{{ $s }}" {{ $ticket->status === $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_',' ',$s)) }}</option>
                     @endforeach
                 </select>
-                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700">Update Status</button>
+                <button type="submit" class="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600">Update Status</button>
             </form>
         </div>
         @endcan
@@ -143,7 +143,7 @@
             @forelse($ticket->attachments as $att)
             <div class="flex items-center gap-2 py-1 text-sm">
                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                <a href="{{ Storage::url($att->file_path) }}" class="text-indigo-600 hover:underline truncate" target="_blank">{{ $att->file_name }}</a>
+                <a href="{{ Storage::url($att->file_path) }}" class="text-brand-500 hover:underline truncate" target="_blank">{{ $att->file_name }}</a>
             </div>
             @empty
             <p class="text-xs text-gray-400">No attachments.</p>

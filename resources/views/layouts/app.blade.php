@@ -13,13 +13,9 @@
 <body class="bg-gray-100 font-sans antialiased">
 <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-64 flex flex-col flex-shrink-0" style="background: linear-gradient(180deg, #001A33 0%, #002E52 100%);">
+    <aside class="w-64 flex flex-col flex-shrink-0" style="background: linear-gradient(180deg, #002E52 0%, #0056B3 100%);">
         <div class="h-16 flex items-center px-5 border-b border-white/10">
-            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="w-9 h-9 rounded-lg object-contain">
-            <div class="ml-3">
-                <span class="text-base font-bold text-white tracking-wide">Altum Credo</span>
-                <span class="ml-2 text-[10px] font-semibold text-gold-400 bg-gold-400/10 px-1.5 py-0.5 rounded">Ticketing</span>
-            </div>
+            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-9 bg-white rounded-lg p-1 object-contain">
         </div>
         <nav class="flex-1 overflow-y-auto py-4">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-6 py-2.5 text-sm hover:bg-white/10 {{ request()->routeIs('dashboard') ? 'bg-white/10 text-white border-r-2 border-gold-400' : 'text-gray-300' }}">

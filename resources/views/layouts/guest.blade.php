@@ -14,21 +14,20 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased" style="background: #001A33;">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0" style="background: radial-gradient(ellipse at 30% 20%, #003D80 0%, #001A33 70%);">
+    <body class="font-sans text-gray-900 antialiased bg-gray-50">
+        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
             <div class="mb-4">
-                <a href="/" class="flex flex-col items-center gap-3">
-                    <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="w-14 h-14 rounded-xl object-contain shadow-lg">
-                    <span class="text-lg font-bold text-white">Altum Credo</span>
+                <a href="/">
+                    <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-14 bg-white rounded-lg p-1.5 object-contain shadow">
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md mt-2 px-6 py-6 shadow-xl overflow-hidden sm:rounded-xl border border-brand-700/30" style="background: #002E52;">
+            <div class="w-full sm:max-w-md mt-2 px-6 py-6 bg-white shadow-lg overflow-hidden sm:rounded-xl border border-gray-200">
                 {{ $slot }}
             </div>
 
             <div class="mt-6">
-                <p class="text-[11px] text-gray-500">Developed by <span class="text-gold-400/70 font-semibold">5P Media</span></p>
+                <p class="text-[11px] text-gray-400">Developed by <span class="font-semibold" style="color: #0056B3;">5P Media</span></p>
             </div>
         </div>
     </body>

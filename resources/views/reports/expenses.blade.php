@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Expense Report')
 @section('content')
-<a href="{{ route('reports.index') }}" class="text-indigo-600 hover:underline text-sm mb-4 block">&larr; Reports</a>
+<a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
 <h2 class="text-xl font-bold text-gray-700 mb-6">Expense Report</h2>
 <div class="mb-6 bg-white rounded-lg shadow p-4 border-l-4 border-green-500 inline-block">
     <div class="text-2xl font-bold text-gray-800">&#8377;{{ number_format($grandTotal, 2) }}</div>

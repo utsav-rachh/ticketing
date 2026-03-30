@@ -3,7 +3,7 @@
 @section('content')
 <div class="flex justify-between items-center mb-4">
     <h2 class="text-xl font-bold text-gray-700">Tickets</h2>
-    <a href="{{ route('tickets.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-sm">+ New Ticket</a>
+    <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white px-4 py-2 rounded hover:bg-brand-600 text-sm">+ New Ticket</a>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">
@@ -23,7 +23,7 @@
             @forelse($tickets as $ticket)
             <tr class="hover:bg-gray-50 {{ $ticket->is_tat_violated && !in_array($ticket->status,['resolved','closed']) ? 'bg-red-50' : '' }}">
                 <td class="px-6 py-3">
-                    <a href="{{ route('tickets.show', $ticket) }}" class="text-indigo-600 hover:underline font-mono text-xs">{{ $ticket->ticket_number }}</a>
+                    <a href="{{ route('tickets.show', $ticket) }}" class="text-brand-500 hover:underline font-mono text-xs">{{ $ticket->ticket_number }}</a>
                     @if($ticket->is_tat_violated && !in_array($ticket->status,['resolved','closed']))
                         <span class="ml-1 text-xs text-red-600 font-bold">TAT!</span>
                     @endif

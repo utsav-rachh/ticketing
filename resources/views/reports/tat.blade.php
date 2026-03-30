@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'TAT Compliance Report')
 @section('content')
-<a href="{{ route('reports.index') }}" class="text-indigo-600 hover:underline text-sm mb-4 block">&larr; Reports</a>
+<a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
 <h2 class="text-xl font-bold text-gray-700 mb-6">TAT Compliance Report</h2>
 <div class="grid grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">

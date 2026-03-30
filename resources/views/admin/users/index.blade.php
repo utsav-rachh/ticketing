@@ -19,7 +19,7 @@
             <tr class="hover:bg-gray-50 {{ $user->deleted_at ? 'opacity-50' : '' }}">
                 <td class="px-6 py-3 font-medium text-gray-800">{{ $user->name }}</td>
                 <td class="px-6 py-3 text-gray-500">{{ $user->email }}</td>
-                <td class="px-6 py-3 capitalize text-xs"><span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">{{ str_replace('_',' ',$user->role) }}</span></td>
+                <td class="px-6 py-3 capitalize text-xs"><span class="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-full">{{ str_replace('_',' ',$user->role) }}</span></td>
                 <td class="px-6 py-3 text-gray-500">{{ $user->department ?? '—' }}</td>
                 <td class="px-6 py-3 text-gray-500">{{ $user->supervisor->name ?? '—' }}</td>
                 <td class="px-6 py-3">

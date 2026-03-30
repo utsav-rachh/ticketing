@@ -2,7 +2,7 @@
 @section('title', 'Dashboard')
 @section('content')
 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-    @foreach([['Total','total','blue'],['Open','open','indigo'],['In Progress','in_progress','yellow'],['Resolved','resolved','green'],['TAT Violated','violated','red']] as [$label,$key,$color])
+    @foreach([['Total','total','blue'],['Open','open','blue'],['In Progress','in_progress','yellow'],['Resolved','resolved','green'],['TAT Violated','violated','red']] as [$label,$key,$color])
     <div class="bg-white rounded-lg shadow p-4 border-l-4 border-{{ $color }}-500">
         <div class="text-2xl font-bold text-gray-800">{{ $stats[$key] }}</div>
         <div class="text-sm text-gray-500">{{ $label }}</div>
@@ -13,7 +13,7 @@
 <div class="bg-white rounded-lg shadow">
     <div class="px-6 py-4 border-b flex items-center justify-between">
         <h2 class="font-semibold text-gray-700">Recent Tickets</h2>
-        <a href="{{ route('tickets.create') }}" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded hover:bg-indigo-700">+ New Ticket</a>
+        <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600">+ New Ticket</a>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -31,7 +31,7 @@
                 @forelse($recentTickets as $ticket)
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-3">
-                        <a href="{{ route('tickets.show', $ticket) }}" class="text-indigo-600 hover:underline font-mono text-xs">{{ $ticket->ticket_number }}</a>
+                        <a href="{{ route('tickets.show', $ticket) }}" class="text-brand-500 hover:underline font-mono text-xs">{{ $ticket->ticket_number }}</a>
                     </td>
                     <td class="px-6 py-3 max-w-xs truncate">{{ $ticket->subject }}</td>
                     <td class="px-6 py-3">
@@ -47,7 +47,7 @@
                     <td class="px-6 py-3 text-gray-400 text-xs">{{ $ticket->created_at->diffForHumans() }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No tickets yet. <a href="{{ route('tickets.create') }}" class="text-indigo-600">Create one</a>.</td></tr>
+                <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No tickets yet. <a href="{{ route('tickets.create') }}" class="text-brand-500">Create one</a>.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -60,7 +60,7 @@
         </form>
 
         <div class="mt-8 text-center">
-            <p class="text-[11px] text-gray-500">Developed by <span class="text-gold-400/70 font-semibold">5ap Media</span></p>
+            <p class="text-[11px] text-gray-500">Developed by <span class="text-gold-400/70 font-semibold">5P Media</span></p>
         </div>
 
     </div>

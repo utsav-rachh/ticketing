@@ -65,7 +65,7 @@
             </form>
         </div>
         <div class="px-4 pb-3">
-            <div class="text-[10px] text-gray-500 text-center">Developed by <span class="text-gold-400/70 font-semibold">5ap Media</span></div>
+            <div class="text-[10px] text-gray-500 text-center">Developed by <span class="text-gold-400/70 font-semibold">5P Media</span></div>
         </div>
     </aside>
 

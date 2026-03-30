@@ -13,12 +13,12 @@
 <body class="bg-gray-100 font-sans antialiased">
 <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-64 flex flex-col flex-shrink-0" style="background: linear-gradient(180deg, #031F2E 0%, #06344D 100%);">
+    <aside class="w-64 flex flex-col flex-shrink-0" style="background: linear-gradient(180deg, #001A33 0%, #002E52 100%);">
         <div class="h-16 flex items-center px-5 border-b border-white/10">
-            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-black text-white" style="background: linear-gradient(135deg, #107AB0, #D4A843);">AC</div>
+            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="w-9 h-9 rounded-lg object-contain">
             <div class="ml-3">
                 <span class="text-base font-bold text-white tracking-wide">Altum Credo</span>
-                <span class="ml-2 text-[10px] font-semibold text-gold-400 bg-gold-400/10 px-1.5 py-0.5 rounded">ITSM</span>
+                <span class="ml-2 text-[10px] font-semibold text-gold-400 bg-gold-400/10 px-1.5 py-0.5 rounded">Ticketing</span>
             </div>
         </div>
         <nav class="flex-1 overflow-y-auto py-4">

@@ -9,18 +9,18 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     <style>
-        body { background: #031F2E; font-family: 'Inter', 'DM Sans', sans-serif; }
+        body { background: #001A33; font-family: 'Inter', 'DM Sans', sans-serif; }
     </style>
 </head>
 <body>
-<div class="min-h-screen flex items-center justify-center" style="background: radial-gradient(ellipse at 30% 20%, #094A6C 0%, #031F2E 70%);">
-    <div class="w-full max-w-md px-8 py-10 rounded-2xl border border-brand-700/30 shadow-2xl" style="background: #06344D;">
+<div class="min-h-screen flex items-center justify-center" style="background: radial-gradient(ellipse at 30% 20%, #003D80 0%, #001A33 70%);">
+    <div class="w-full max-w-md px-8 py-10 rounded-2xl border border-brand-700/30 shadow-2xl" style="background: #002E52;">
 
         <!-- Logo -->
         <div class="text-center mb-8">
-            <div class="w-16 h-16 rounded-xl mx-auto mb-4 flex items-center justify-center text-2xl font-black text-white shadow-lg" style="background: linear-gradient(135deg, #107AB0, #D4A843);">AC</div>
+            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="w-16 h-16 rounded-xl mx-auto mb-4 object-contain shadow-lg">
             <h1 class="text-2xl font-bold text-white tracking-tight">Altum Credo</h1>
-            <p class="text-sm text-gold-400 mt-1 font-medium">IT Service Management Portal</p>
+            <p class="text-sm text-gold-400 mt-1 font-medium">Ticketing System</p>
         </div>
 
         <!-- Session Status -->
@@ -40,7 +40,7 @@
                 <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email</label>
                 <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
                     class="w-full px-4 py-3 rounded-lg text-sm text-white border border-brand-700/50 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 focus:outline-none transition-colors"
-                    style="background: #094A6C;"
+                    style="background: #003D80;"
                     placeholder="you@altumcredo.com">
             </div>
 
@@ -48,13 +48,13 @@
                 <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</label>
                 <input id="password" type="password" name="password" required
                     class="w-full px-4 py-3 rounded-lg text-sm text-white border border-brand-700/50 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 focus:outline-none transition-colors"
-                    style="background: #094A6C;"
+                    style="background: #003D80;"
                     placeholder="••••••••">
             </div>
 
             <button type="submit"
                 class="w-full py-3 rounded-lg text-sm font-semibold text-white transition-all duration-200 hover:shadow-lg"
-                style="background: linear-gradient(135deg, #107AB0, #0C5F8A);">
+                style="background: linear-gradient(135deg, #0056B3, #004A99);">
                 Sign In
             </button>
         </form>

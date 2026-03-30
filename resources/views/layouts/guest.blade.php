@@ -14,16 +14,16 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased" style="background: #031F2E;">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0" style="background: radial-gradient(ellipse at 30% 20%, #094A6C 0%, #031F2E 70%);">
+    <body class="font-sans text-gray-900 antialiased" style="background: #001A33;">
+        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0" style="background: radial-gradient(ellipse at 30% 20%, #003D80 0%, #001A33 70%);">
             <div class="mb-4">
                 <a href="/" class="flex flex-col items-center gap-3">
-                    <div class="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-white shadow-lg" style="background: linear-gradient(135deg, #107AB0, #D4A843);">AC</div>
+                    <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="w-14 h-14 rounded-xl object-contain shadow-lg">
                     <span class="text-lg font-bold text-white">Altum Credo</span>
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md mt-2 px-6 py-6 shadow-xl overflow-hidden sm:rounded-xl border border-brand-700/30" style="background: #06344D;">
+            <div class="w-full sm:max-w-md mt-2 px-6 py-6 shadow-xl overflow-hidden sm:rounded-xl border border-brand-700/30" style="background: #002E52;">
                 {{ $slot }}
             </div>
 

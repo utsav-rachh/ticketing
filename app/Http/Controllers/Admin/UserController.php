@@ -20,7 +20,7 @@ class UserController extends Controller
             'name'       => 'required|string|max:255',
             'email'      => 'required|email|unique:users',
             'password'   => 'required|min:8',
-            'role'       => 'required|in:admin,md,ciso,hr_head,it_lead,app_lead,it_l1,app_l1,admin_l1,employee',
+            'role'       => 'required|in:employee,resolver',
             'department' => 'nullable|string',
             'reports_to' => 'nullable|exists:users,id',
             'phone'      => 'nullable|string',
@@ -35,7 +35,7 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name'       => 'required|string|max:255',
-            'role'       => 'required|in:admin,md,ciso,hr_head,it_lead,app_lead,it_l1,app_l1,admin_l1,employee',
+            'role'       => 'required|in:employee,resolver',
             'department' => 'nullable|string',
             'reports_to' => 'nullable|exists:users,id',
             'phone'      => 'nullable|string',

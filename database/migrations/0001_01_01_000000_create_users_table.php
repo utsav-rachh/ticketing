@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['admin','md','ciso','hr_head','it_lead','app_lead','it_l1','app_l1','admin_l1','employee'])->default('employee');
+            $table->enum('role', ['employee','resolver'])->default('employee');
             $table->string('department', 100)->nullable();
             $table->unsignedBigInteger('reports_to')->nullable();
             $table->string('phone', 20)->nullable();

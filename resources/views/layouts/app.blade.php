@@ -30,7 +30,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 New Ticket
             </a>
-            @if(auth()->user()->isLead() || auth()->user()->isAdmin() || auth()->user()->isMd())
+            @if(auth()->user()->isResolver())
             <a href="{{ route('team.index') }}" class="flex items-center gap-3 px-6 py-2.5 text-sm hover:bg-white/10 {{ request()->routeIs('team.*') ? 'bg-white/10 text-white border-r-2 border-gold-400' : 'text-gray-300' }}">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
                 Team
@@ -39,8 +39,6 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 Reports
             </a>
-            @endif
-            @if(auth()->user()->isAdmin())
             <div class="mt-4 px-6 py-1 text-xs text-gold-400/60 uppercase tracking-wider font-semibold">Admin</div>
             <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 px-6 py-2.5 text-sm hover:bg-white/10 {{ request()->routeIs('admin.users.*') ? 'bg-white/10 text-white border-r-2 border-gold-400' : 'text-gray-300' }}">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/></svg>
@@ -54,7 +52,7 @@
         </nav>
         <div class="border-t border-white/10 p-4">
             <div class="text-xs text-gray-300 font-medium">{{ auth()->user()->name }}</div>
-            <div class="text-xs text-gray-500">{{ auth()->user()->role }}</div>
+            <div class="text-xs text-gray-500">{{ ucfirst(auth()->user()->role) }}</div>
             <form method="POST" action="{{ route('logout') }}" class="mt-2">
                 @csrf
                 <button type="submit" class="text-xs text-red-400 hover:text-red-300">Logout</button>

@@ -35,7 +35,7 @@ class ReportController extends Controller
 
     public function teamReport()
     {
-        $engineers = User::whereIn('role', ['it_l1','app_l1','admin_l1','it_lead','app_lead','hr_head'])
+        $engineers = User::where('role', 'resolver')
             ->withCount(['assignedTickets as total_assigned',
                 'assignedTickets as resolved_count' => fn($q) => $q->where('status','resolved'),
                 'assignedTickets as violated_count'  => fn($q) => $q->where('is_tat_violated',true),

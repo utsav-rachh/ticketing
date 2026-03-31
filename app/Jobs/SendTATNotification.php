@@ -26,22 +26,6 @@ class SendTATNotification implements ShouldQueue
 
     private function getRecipients(): Collection
     {
-        $leadRole = match($this->ticket->support_type) {
-            'infrastructure' => 'it_lead',
-            'application'    => 'app_lead',
-            'admin'          => 'hr_head',
-        };
-
-        $users = User::where('role', $leadRole)->get();
-
-        if (in_array($this->ticket->support_type, ['infrastructure','application'])) {
-            $users = $users->merge(User::where('role','ciso')->get());
-        }
-
-        if ($this->ticket->priority === 'critical') {
-            $users = $users->merge(User::where('role','md')->get());
-        }
-
-        return $users->unique('id');
+        return User::where('role', 'resolver')->where('is_active', true)->get();
     }
 }

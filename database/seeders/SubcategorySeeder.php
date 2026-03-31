@@ -11,31 +11,40 @@ class SubcategorySeeder extends Seeder
     {
         $data = [
             'Rapid Sales' => [
-                ['Login Issue','high'],['Report Generation Error','medium'],['Data Sync Failure','high'],
-                ['Slow Performance','low'],['Module Access Denied','medium'],['Export Failure','medium'],
-                ['User Role/Permission Error','medium'],['Session Timeout','low'],['Data Import Failure','medium'],
-                ['Notification Not Received','low'],
+                ['Unable to login','high'],['User ID locked / inactive','high'],['Session Timeout','medium'],
+                ['Login OTP','medium'],['KYC Verification issue','high'],['Connector Issue','high'],
+                ['Sub Branch','medium'],['Data Sync Failure','high'],['IMD Issue','medium'],
+                ['Member Management','medium'],['Documents Section','medium'],['Loan Details','medium'],
+                ['Collateral Details','medium'],['Dedupe','medium'],
             ],
-            'A5 Technical' => [
-                ['Application Crash','critical'],['Database Connection Error','critical'],['API Timeout','high'],
-                ['Authentication Failure','high'],['Data Corruption','critical'],['Integration Error','high'],
-                ['Batch Processing Failure','high'],['Scheduled Job Not Running','medium'],['Memory Overflow','high'],
-                ['Version Mismatch','medium'],
+            'FI- Technical' => [
+                ['Unable to login','high'],['User ID locked / inactive','high'],['Password reset not working','high'],
+                ['Documents Upload issue','medium'],['Address capture Issue','medium'],['Lat-long fetch issue','medium'],
+                ['Area Details issue','medium'],['Construction Stage issue','medium'],['Realizable value issue','medium'],
             ],
-            'CRM' => [
-                ['Contact Sync Issue','medium'],['Pipeline Error','high'],['Email Integration Failure','high'],
-                ['Dashboard Not Loading','medium'],['Custom Field Error','low'],['Lead Assignment Issue','medium'],
-                ['Report Filter Error','low'],['Duplicate Record','low'],['Workflow Automation Failure','medium'],
+            'PSD Sales' => [
+                ['Unable to login','high'],['User ID locked / inactive','high'],['Sanction Letter','medium'],
+                ['Charges','medium'],['Documents Tile','medium'],['LPC','medium'],
+                ['Cheque Re-payment Banking','medium'],['Repayment Mode Change','medium'],['Mandate Issue','medium'],
+                ['Nomination Tile','medium'],['Sanction Condition','medium'],['Disbursement Details','medium'],
+                ['Disbursement Type Change','medium'],['Beneficiary Banking','medium'],['Workflow Issue','medium'],
             ],
-            'ERP' => [
-                ['Transaction Posting Error','critical'],['Ledger Mismatch','high'],['Inventory Sync Failure','high'],
-                ['Purchase Order Issue','medium'],['Report Discrepancy','medium'],['GL Account Mapping Error','high'],
-                ['Tax Calculation Error','high'],['Vendor Master Issue','medium'],['Budget vs Actual Variance','medium'],
+            'Credit' => [
+                ['Unable to login','high'],['User ID locked / inactive','high'],['Deal Summary','medium'],
+                ['Member Management','medium'],['Document Upload','medium'],['Loan & Charges','medium'],
+                ['Collateral','medium'],['AML','high'],['PD Tile Issue','medium'],
+                ['Business Verification','medium'],['Income verification','medium'],['Banking Analysis','medium'],
+                ['RTR','medium'],['Final FI / Technical / Legal / RCU','medium'],['BRE / Rule Engine','medium'],
             ],
-            'Email & Communication' => [
-                ['Outlook Not Working','high'],['Email Delivery Failure','high'],['Calendar Sync Issue','medium'],
-                ['Teams Call Quality','medium'],['Distribution List Error','medium'],['Auto-Reply Not Working','low'],
-                ['Attachment Size Error','low'],['Spam Filter Issue','medium'],
+            'OPS' => [
+                ['Unable to login','high'],['Deal Summary','medium'],['Charges','medium'],
+                ['KYC Summary','medium'],['Document','medium'],['Sanction Condition','medium'],
+                ['Disbursement Check','medium'],['Download Document','medium'],['LMS Submit','medium'],
+            ],
+            'LMS' => [
+                ['Unable to login','high'],['User ID locked / inactive','high'],['Job Run','medium'],
+                ['Data Upload failed','high'],['Payment receipt Failed','high'],['SMS Issue','medium'],
+                ['Mobile Number Change','medium'],
             ],
             'Laptop' => [
                 ['Battery Draining Fast','medium'],['Screen Flickering','high'],['Keyboard Malfunction','medium'],

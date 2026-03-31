@@ -42,10 +42,8 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'assigned_to');
     }
 
-    public function isAdmin(): bool { return $this->role === 'admin'; }
-    public function isMd(): bool { return $this->role === 'md'; }
-    public function isLead(): bool { return in_array($this->role, ['it_lead','app_lead','hr_head','ciso']); }
-    public function isL1(): bool { return in_array($this->role, ['it_l1','app_l1','admin_l1']); }
-    public function canAssign(): bool { return in_array($this->role, ['admin','md','ciso','hr_head','it_lead','app_lead']); }
-    public function canExport(): bool { return in_array($this->role, ['admin','md','ciso','hr_head','it_lead','app_lead']); }
+    public function isResolver(): bool { return $this->role === 'resolver'; }
+    public function isEmployee(): bool { return $this->role === 'employee'; }
+    public function canAssign(): bool { return $this->role === 'resolver'; }
+    public function canExport(): bool { return $this->role === 'resolver'; }
 }

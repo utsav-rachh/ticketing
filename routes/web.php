@@ -41,7 +41,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
 
     // Reports
-    Route::middleware('role:admin,md,ciso,hr_head,it_lead,app_lead')->prefix('reports')->group(function () {
+    Route::middleware('role:resolver')->prefix('reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/priority', [ReportController::class, 'priorityReport'])->name('reports.priority');
         Route::get('/tat', [ReportController::class, 'tatReport'])->name('reports.tat');
@@ -50,7 +50,7 @@ Route::middleware(['auth','verified'])->group(function () {
     });
 
     // Admin
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('role:resolver')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::get('/tat', [TATController::class, 'index'])->name('tat.index');

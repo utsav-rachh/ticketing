@@ -35,13 +35,9 @@ class Ticket extends Model
     public function scopeVisibleTo($query, User $user)
     {
         return match($user->role) {
-            'admin', 'md'            => $query,
-            'ciso'                   => $query->whereIn('support_type', ['application','infrastructure']),
-            'hr_head', 'admin_l1'   => $query->where('support_type', 'admin'),
-            'it_lead', 'it_l1'      => $query->where('support_type', 'infrastructure'),
-            'app_lead', 'app_l1'    => $query->where('support_type', 'application'),
-            'employee'               => $query->where('created_by', $user->id),
-            default                  => $query->whereRaw('1 = 0'),
+            'resolver' => $query,
+            'employee' => $query->where('created_by', $user->id),
+            default    => $query->whereRaw('1 = 0'),
         };
     }
 

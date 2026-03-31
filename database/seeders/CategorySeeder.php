@@ -10,10 +10,11 @@ class CategorySeeder extends Seeder
     {
         $categories = [
             ['support_type'=>'application','name'=>'Rapid Sales','sort_order'=>1],
-            ['support_type'=>'application','name'=>'A5 Technical','sort_order'=>2],
-            ['support_type'=>'application','name'=>'CRM','sort_order'=>3],
-            ['support_type'=>'application','name'=>'ERP','sort_order'=>4],
-            ['support_type'=>'application','name'=>'Email & Communication','sort_order'=>5],
+            ['support_type'=>'application','name'=>'FI- Technical','sort_order'=>2],
+            ['support_type'=>'application','name'=>'PSD Sales','sort_order'=>3],
+            ['support_type'=>'application','name'=>'Credit','sort_order'=>4],
+            ['support_type'=>'application','name'=>'OPS','sort_order'=>5],
+            ['support_type'=>'application','name'=>'LMS','sort_order'=>6],
             ['support_type'=>'infrastructure','name'=>'Laptop','sort_order'=>1],
             ['support_type'=>'infrastructure','name'=>'Desktop','sort_order'=>2],
             ['support_type'=>'infrastructure','name'=>'Printer','sort_order'=>3],

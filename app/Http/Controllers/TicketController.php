@@ -187,19 +187,9 @@ class TicketController extends Controller
 
     private function getAssignableUsers(Ticket $ticket): array
     {
-        $user = auth()->user();
-        $roleMap = [
-            'it_lead'  => ['it_l1'],
-            'app_lead' => ['app_l1'],
-            'hr_head'  => ['admin_l1'],
-            'ciso'     => ['it_lead','app_lead','it_l1','app_l1'],
-        ];
-
-        if (in_array($user->role, ['admin','md'])) {
-            return \App\Models\User::where('is_active',true)->where('id','!=',$user->id)->get(['id','name','role'])->toArray();
-        }
-
-        $roles = $roleMap[$user->role] ?? [];
-        return \App\Models\User::whereIn('role',$roles)->where('is_active',true)->get(['id','name','role'])->toArray();
+        return \App\Models\User::where('role', 'resolver')
+            ->where('is_active', true)
+            ->get(['id', 'name', 'role'])
+            ->toArray();
     }
 }

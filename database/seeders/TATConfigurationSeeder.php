@@ -16,7 +16,10 @@ class TATConfigurationSeeder extends Seeder
         ];
 
         foreach ($configs as $config) {
-            TatConfiguration::create($config + ['is_active' => true]);
+            TatConfiguration::updateOrCreate(
+                ['priority' => $config['priority']],
+                $config + ['is_active' => true]
+            );
         }
     }
 }

@@ -17,15 +17,17 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $data) {
-            User::create([
-                'name'     => $data['name'],
-                'email'    => $data['email'],
-                'password' => Hash::make($data['role'] . '@123'),
-                'role'     => $data['role'],
-                'department' => $data['department'],
-                'is_active'=> true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name'     => $data['name'],
+                    'password' => Hash::make($data['role'] . '@123'),
+                    'role'     => $data['role'],
+                    'department' => $data['department'],
+                    'is_active'=> true,
+                    'email_verified_at' => now(),
+                ]
+            );
         }
     }
 }

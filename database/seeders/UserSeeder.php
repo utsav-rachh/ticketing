@@ -11,9 +11,7 @@ class UserSeeder extends Seeder
     {
         $users = [
             ['name'=>'Resolver','email'=>'resolver@altumcredo.com','role'=>'resolver','department'=>'IT'],
-            ['name'=>'Rahul Sharma','email'=>'rahul@altumcredo.com','role'=>'employee','department'=>'Sales'],
-            ['name'=>'Priya Mehta','email'=>'priya@altumcredo.com','role'=>'employee','department'=>'Finance'],
-            ['name'=>'Amit Joshi','email'=>'amit@altumcredo.com','role'=>'employee','department'=>'Operations'],
+            ['name'=>'Vishal','email'=>'vishal@altumcredo.com','role'=>'employee','department'=>'IT'],
         ];
 
         foreach ($users as $data) {

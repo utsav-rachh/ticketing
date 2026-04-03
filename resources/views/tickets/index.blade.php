@@ -5,6 +5,9 @@
     <h2 class="text-xl font-bold text-gray-700">Tickets</h2>
     <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white px-4 py-2 rounded hover:bg-brand-600 text-sm">+ New Ticket</a>
 </div>
+
+
+
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">

@@ -116,14 +116,28 @@ class SubcategorySeeder extends Seeder
             $category = Category::where('name', $categoryName)->first();
             if (!$category) continue;
             foreach ($subcats as $i => [$name, $priority]) {
-                Subcategory::create([
-                    'category_id'      => $category->id,
-                    'name'             => $name,
-                    'default_priority' => $priority,
-                    'is_active'        => true,
-                    'sort_order'       => $i + 1,
-                ]);
+                Subcategory::updateOrCreate(
+                    ['category_id' => $category->id, 'name' => $name],
+                    [
+                        'default_priority' => $priority,
+                        'is_active'        => true,
+                        'sort_order'       => $i + 1,
+                    ]
+                );
             }
+        }
+
+        // Every category must expose an "Others" subcategory for free-text issues.
+        foreach (Category::all() as $category) {
+            Subcategory::updateOrCreate(
+                ['category_id' => $category->id, 'name' => 'Others'],
+                [
+                    'default_priority' => 'medium',
+                    'is_active'        => true,
+                    'sort_order'       => 9999,
+                    'description'      => 'Not in the list — describe your issue below.',
+                ]
+            );
         }
     }
 }

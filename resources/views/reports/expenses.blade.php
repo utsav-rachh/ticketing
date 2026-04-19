@@ -2,12 +2,38 @@
 @section('title', 'Expense Report')
 @section('content')
 <a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
-<h2 class="text-xl font-bold text-gray-700 mb-6">Expense Report</h2>
-<div class="mb-6 bg-white rounded-lg shadow p-4 border-l-4 border-green-500 inline-block">
-    <div class="text-2xl font-bold text-gray-800">&#8377;{{ number_format($grandTotal, 2) }}</div>
-    <div class="text-sm text-gray-500">Total Expenses</div>
+<h2 class="text-xl font-bold text-gray-700 mb-4">Expense Report</h2>
+
+<form method="GET" class="bg-white shadow rounded p-4 flex items-end gap-3 mb-6">
+    <label class="block flex-1 max-w-xs">
+        <span class="text-xs font-medium text-gray-500">Region</span>
+        <select name="region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+            <option value="">— all regions —</option>
+            @foreach($regions as $r)
+            <option value="{{ $r->id }}" {{ request('region_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
+            @endforeach
+        </select>
+    </label>
+    <button class="text-white px-4 py-2 rounded text-sm" style="background:#0056B3;">Filter</button>
+</form>
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+        <div class="text-2xl font-bold text-gray-800">&#8377;{{ number_format($approvedTotal, 2) }}</div>
+        <div class="text-sm text-gray-500">Approved</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+        <div class="text-2xl font-bold text-gray-800">&#8377;{{ number_format($pendingTotal, 2) }}</div>
+        <div class="text-sm text-gray-500">Pending</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+        <div class="text-2xl font-bold text-gray-800">&#8377;{{ number_format($rejectedTotal, 2) }}</div>
+        <div class="text-sm text-gray-500">Rejected</div>
+    </div>
 </div>
+
 <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="px-6 py-4 border-b text-sm font-semibold text-gray-700">Daily totals (last 30 days)</div>
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>

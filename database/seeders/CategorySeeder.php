@@ -29,7 +29,10 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $cat) {
-            Category::create($cat + ['is_active' => true]);
+            Category::updateOrCreate(
+                ['support_type' => $cat['support_type'], 'name' => $cat['name']],
+                $cat + ['is_active' => true]
+            );
         }
     }
 }

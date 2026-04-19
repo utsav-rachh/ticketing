@@ -2,6 +2,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
+use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -10,39 +12,43 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::withTrashed()->with('supervisor')->orderBy('role')->paginate(20);
-        return view('admin.users.index', compact('users'));
+        $users    = User::withTrashed()->with(['supervisor','branch','region','assignedRegion'])
+            ->orderBy('role')->orderBy('resolver_level')->paginate(25);
+        $regions  = Region::active()->orderBy('name')->get();
+        $branches = Branch::active()->orderBy('name')->get();
+        return view('admin.users.index', compact('users','regions','branches'));
+    }
+
+    public function create()
+    {
+        $regions  = Region::active()->orderBy('name')->get();
+        $branches = Branch::active()->orderBy('name')->get();
+        return view('admin.users.create', compact('regions','branches'));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'email'      => 'required|email|unique:users',
-            'password'   => 'required|min:8',
-            'role'       => 'required|in:employee,resolver',
-            'department' => 'nullable|string',
-            'reports_to' => 'nullable|exists:users,id',
-            'phone'      => 'nullable|string',
-        ]);
-        $data['password'] = Hash::make($data['password']);
+        $data = $this->validated($request, true);
+        $data['password']          = Hash::make($data['password']);
         $data['email_verified_at'] = now();
         User::create($data);
-        return back()->with('success', 'User created.');
+        return redirect()->route('admin.users.index')->with('success', 'User created.');
+    }
+
+    public function edit(User $user)
+    {
+        $regions  = Region::active()->orderBy('name')->get();
+        $branches = Branch::active()->orderBy('name')->get();
+        return view('admin.users.edit', compact('user','regions','branches'));
     }
 
     public function update(Request $request, User $user)
     {
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'role'       => 'required|in:employee,resolver',
-            'department' => 'nullable|string',
-            'reports_to' => 'nullable|exists:users,id',
-            'phone'      => 'nullable|string',
-            'is_active'  => 'boolean',
-        ]);
+        $data = $this->validated($request, false, $user->id);
+        if (empty($data['password'])) unset($data['password']);
+        else $data['password'] = Hash::make($data['password']);
         $user->update($data);
-        return back()->with('success', 'User updated.');
+        return redirect()->route('admin.users.index')->with('success', 'User updated.');
     }
 
     public function destroy(User $user)
@@ -50,5 +56,26 @@ class UserController extends Controller
         $user->update(['is_active' => false]);
         $user->delete();
         return back()->with('success', 'User deactivated.');
+    }
+
+    private function validated(Request $request, bool $creating, ?int $id = null): array
+    {
+        return $request->validate([
+            'name'                  => 'required|string|max:255',
+            'email'                 => 'required|email|unique:users,email' . ($id ? ",{$id}" : ''),
+            'password'              => $creating ? 'required|min:6' : 'nullable|min:6',
+            'role'                  => 'required|in:employee,resolver,admin',
+            'resolver_level'        => 'nullable|in:junior,tl,it_head',
+            'department'            => 'nullable|string|max:100',
+            'reports_to'            => 'nullable|exists:users,id',
+            'phone'                 => 'nullable|string|max:20',
+            'employee_id'           => 'nullable|string|max:50',
+            'branch_id'             => 'nullable|exists:branches,id',
+            'region_id'             => 'nullable|exists:regions,id',
+            'assigned_region_id'    => 'nullable|exists:regions,id',
+            'assigned_support_type' => 'nullable|in:application,infrastructure,admin',
+            'is_management'         => 'nullable|boolean',
+            'is_active'             => 'nullable|boolean',
+        ]);
     }
 }

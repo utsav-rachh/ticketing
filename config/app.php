@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'company_name' => env('APP_COMPANY_NAME', 'Altum Credo Finance Private Limited'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

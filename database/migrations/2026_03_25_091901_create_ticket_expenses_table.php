@@ -12,10 +12,15 @@ return new class extends Migration {
             $table->string('description', 500);
             $table->decimal('amount', 10, 2);
             $table->date('expense_date');
-            $table->string('receipt_path', 500)->nullable();
+            $table->string('invoice_path', 500)->nullable();
+            $table->enum('status', ['pending','approved','rejected'])->default('pending');
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->string('rejection_reason', 500)->nullable();
             $table->timestamps();
             $table->index('ticket_id');
             $table->index('expense_date');
+            $table->index('status');
         });
     }
     public function down(): void { Schema::dropIfExists('ticket_expenses'); }

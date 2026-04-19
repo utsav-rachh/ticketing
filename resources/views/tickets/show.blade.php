@@ -1,14 +1,35 @@
 @extends('layouts.app')
 @section('title', $ticket->ticket_number)
 @section('content')
-<div class="grid grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Main -->
-    <div class="col-span-2 space-y-6">
+    <div class="lg:col-span-2 space-y-6">
+
+        @if($ticket->is_red_flag)
+        <div class="flex items-center gap-3 bg-red-50 border-2 border-red-300 text-red-800 rounded-lg p-4">
+            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h4.586A1 1 0 019.293 3.293L10 4h5a1 1 0 011 1v7a1 1 0 01-1 1h-5.586a1 1 0 01-.707-.293L9 12H4v5a1 1 0 11-2 0V4z"/></svg>
+            <div>
+                <div class="font-semibold">Red Flag — Management ticket</div>
+                <div class="text-sm">Treat as highest priority. Escalate immediately if blocked.</div>
+            </div>
+        </div>
+        @endif
+
+        @if($ticket->isOnHold())
+        <div class="flex items-center gap-3 bg-purple-50 border border-purple-200 text-purple-800 rounded-lg p-4">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div>
+                <div class="font-semibold">On Hold since {{ $ticket->hold_started_at?->format('d M Y, H:i') }}</div>
+                <div class="text-sm">TAT clock is paused until the ticket is moved off hold.</div>
+            </div>
+        </div>
+        @endif
+
         <!-- Header -->
         <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-start justify-between">
+            <div class="flex items-start justify-between gap-3">
                 <div>
-                    <div class="flex items-center gap-2 mb-2">
+                    <div class="flex items-center gap-2 mb-2 flex-wrap">
                         <span class="font-mono text-sm text-gray-500">{{ $ticket->ticket_number }}</span>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold
                             {{ $ticket->priority === 'critical' ? 'bg-red-100 text-red-700' : ($ticket->priority === 'high' ? 'bg-orange-100 text-orange-700' : ($ticket->priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700')) }}">
@@ -20,124 +41,178 @@
                         @endif
                     </div>
                     <h2 class="text-lg font-bold text-gray-800">{{ $ticket->subject }}</h2>
-                    <p class="text-sm text-gray-500 mt-1">{{ $ticket->category->name }} &rarr; {{ $ticket->subcategory->name }} &bull; {{ ucfirst($ticket->support_type) }}</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        {{ $ticket->category->name }} &rarr; {{ $ticket->subcategory->name }}
+                        @if($ticket->custom_issue) (<em class="text-gray-600">{{ $ticket->custom_issue }}</em>) @endif
+                        &bull; {{ ucfirst($ticket->support_type) }}
+                    </p>
                 </div>
+                @can('toggleRedFlag', $ticket)
+                <form method="POST" action="{{ route('tickets.redflag', $ticket) }}">
+                    @csrf
+                    <button type="submit" class="text-xs px-3 py-1.5 rounded {{ $ticket->is_red_flag ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                        {{ $ticket->is_red_flag ? 'Clear red flag' : 'Red-flag ticket' }}
+                    </button>
+                </form>
+                @endcan
             </div>
+
             @if($ticket->description)
             <div class="mt-4 p-4 bg-gray-50 rounded text-sm text-gray-700 whitespace-pre-wrap">{{ $ticket->description }}</div>
             @endif
         </div>
 
-        <!-- Activity Timeline -->
+        <!-- Unified Timeline -->
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="font-semibold text-gray-700 mb-4">Activity Timeline</h3>
             <div class="space-y-3">
-                @foreach($ticket->activities as $act)
+                @forelse($timeline as $item)
                 <div class="flex gap-3 text-sm">
                     <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {{ strtoupper(substr($act->user->name ?? 'S', 0, 1)) }}
+                        {{ strtoupper(substr($item->user->name ?? 'S', 0, 1)) }}
                     </div>
-                    <div>
-                        <span class="font-medium text-gray-700">{{ $act->user->name ?? 'System' }}</span>
-                        <span class="text-gray-500 ml-1">{{ $act->description }}</span>
-                        <div class="text-xs text-gray-400">{{ $act->created_at->format('d M Y, H:i') }}</div>
+                    <div class="flex-1">
+                        <span class="font-medium text-gray-700">{{ $item->user->name ?? 'System' }}</span>
+                        @if($item->old || $item->new)
+                            <span class="text-gray-500 ml-1">
+                                changed status:
+                                <span class="text-gray-600">{{ $item->old ?: '—' }}</span>
+                                &rarr;
+                                <span class="font-medium text-gray-800">{{ $item->new ?: '—' }}</span>
+                            </span>
+                        @endif
+                        @if($item->text)
+                            <div class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ $item->text }}</div>
+                        @endif
+                        <div class="text-xs text-gray-400 mt-0.5">{{ $item->at?->format('d M Y, H:i') }}</div>
                     </div>
                 </div>
-                @endforeach
+                @empty
+                <p class="text-sm text-gray-400">No activity yet.</p>
+                @endforelse
             </div>
 
-            @can('update', $ticket)
-            <form method="POST" action="{{ route('tickets.activity', $ticket) }}" class="mt-4 flex gap-2">
+            @can('comment', $ticket)
+            <form method="POST" action="{{ route('tickets.update', $ticket) }}" enctype="multipart/form-data" class="mt-6 border-t pt-4 space-y-3">
                 @csrf
-                <input type="text" name="description" required placeholder="Add a note..."
-                    class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                <button type="submit" class="bg-brand-500 text-white px-4 py-2 rounded text-sm hover:bg-brand-600">Add Note</button>
+                @can('updateStatus', $ticket)
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <select name="status" class="border border-gray-300 rounded px-3 py-2 text-sm">
+                        <option value="">— keep status —</option>
+                        @foreach(['open','assigned','in_progress','pending_info','resolved','closed'] as $s)
+                        <option value="{{ $s }}">{{ ucfirst(str_replace('_',' ',$s)) }}</option>
+                        @endforeach
+                        @can('hold', $ticket)
+                        <option value="hold">Hold</option>
+                        @endcan
+                    </select>
+                    <input type="file" name="attachment" class="text-sm text-gray-500 md:col-span-2">
+                </div>
+                @else
+                <div>
+                    <input type="file" name="attachment" class="text-sm text-gray-500">
+                </div>
+                @endcan
+                <textarea name="note" rows="2" placeholder="Add a note, update, or context…"
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"></textarea>
+                @error('note') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                @error('status') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-brand-500 text-white px-4 py-2 rounded text-sm hover:bg-brand-600">Post update</button>
+                </div>
             </form>
             @endcan
         </div>
 
-        <!-- Expenses -->
-        @can('update', $ticket)
+        <!-- Expenses (infrastructure + admin only) -->
+        @if($ticket->support_type !== 'application')
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="font-semibold text-gray-700 mb-4">Expenses</h3>
             @forelse($ticket->expenses as $exp)
-            <div class="flex justify-between text-sm py-2 border-b last:border-0">
-                <span class="text-gray-700">{{ $exp->description }}</span>
+            <div class="flex justify-between items-center text-sm py-2 border-b last:border-0">
+                <div>
+                    <div class="text-gray-700">{{ $exp->description }}</div>
+                    <div class="text-xs text-gray-400">
+                        {{ $exp->expense_date->format('d M Y') }} · by {{ $exp->addedBy->name ?? '' }} ·
+                        <span class="uppercase font-medium
+                            {{ $exp->status === 'approved' ? 'text-green-600' : ($exp->status === 'rejected' ? 'text-red-600' : 'text-yellow-600') }}">
+                            {{ $exp->status }}
+                        </span>
+                        @if($exp->invoice_path)
+                        · <a href="{{ Storage::url($exp->invoice_path) }}" target="_blank" class="text-brand-500 hover:underline">invoice</a>
+                        @endif
+                    </div>
+                </div>
                 <span class="font-semibold text-gray-800">&#8377;{{ number_format($exp->amount, 2) }}</span>
             </div>
             @empty
             <p class="text-sm text-gray-400">No expenses recorded.</p>
             @endforelse
-            <form method="POST" action="{{ route('tickets.expense', $ticket) }}" class="mt-4 grid grid-cols-3 gap-2">
+
+            @can('addExpense', $ticket)
+            <form method="POST" action="{{ route('tickets.expense', $ticket) }}" enctype="multipart/form-data" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-2">
                 @csrf
-                <input type="text" name="description" required placeholder="Description" class="border border-gray-300 rounded px-3 py-2 text-sm">
+                <input type="text" name="description" required placeholder="Description" class="border border-gray-300 rounded px-3 py-2 text-sm md:col-span-2">
                 <input type="number" name="amount" required placeholder="Amount (&#8377;)" min="0" step="0.01" class="border border-gray-300 rounded px-3 py-2 text-sm">
                 <input type="date" name="expense_date" required value="{{ date('Y-m-d') }}" class="border border-gray-300 rounded px-3 py-2 text-sm">
-                <button type="submit" class="col-span-3 bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">Add Expense</button>
+                <input type="file" name="invoice" required class="text-sm text-gray-500 md:col-span-3">
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">Submit for approval</button>
             </form>
+            @endcan
         </div>
-        @endcan
+        @endif
     </div>
 
     <!-- Sidebar -->
     <div class="space-y-6">
-        <!-- Details -->
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="font-semibold text-gray-700 mb-3 text-sm">Ticket Details</h3>
             <dl class="space-y-2 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-500">Raised By</dt><dd class="font-medium">{{ $ticket->creator->name }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Assigned To</dt><dd class="font-medium">{{ $ticket->assignee->name ?? 'Unassigned' }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd class="text-gray-600">{{ $ticket->created_at->format('d M Y, H:i') }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Raised By</dt><dd class="font-medium text-right">{{ $ticket->creator->name }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Branch</dt><dd class="font-medium text-right">{{ $ticket->branch->name ?? '—' }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Region</dt><dd class="font-medium text-right">{{ $ticket->branch->region->name ?? '—' }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Assigned To</dt><dd class="font-medium text-right">{{ $ticket->assignee->name ?? 'Unassigned' }}</dd></div>
+                @if($ticket->vendor)
+                <div class="flex justify-between"><dt class="text-gray-500">Vendor</dt><dd class="font-medium text-right">{{ $ticket->vendor->name }}</dd></div>
+                @endif
+                <div class="flex justify-between"><dt class="text-gray-500">Contact</dt><dd class="text-right text-xs">{{ $ticket->employee_contact_name }}<br><span class="text-gray-500">{{ $ticket->employee_contact_phone }}</span></dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd class="text-gray-600 text-right">{{ $ticket->created_at->format('d M Y, H:i') }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">TAT Deadline</dt>
-                    <dd class="{{ $ticket->isOverdue() ? 'text-red-600 font-bold' : 'text-gray-600' }}">{{ $ticket->tat_deadline->format('d M Y, H:i') }}</dd>
+                    <dd class="{{ $ticket->isOverdue() ? 'text-red-600 font-bold' : 'text-gray-600' }} text-right">{{ $ticket->tat_deadline->format('d M Y, H:i') }}</dd>
                 </div>
-                <div class="flex justify-between"><dt class="text-gray-500">TAT Progress</dt>
-                    <dd>
-                        <div class="w-24 bg-gray-200 rounded-full h-2">
-                            <div class="h-2 rounded-full {{ $ticket->tatProgress() >= 100 ? 'bg-red-500' : ($ticket->tatProgress() >= 75 ? 'bg-yellow-500' : 'bg-green-500') }}"
-                                style="width: {{ min(100, $ticket->tatProgress()) }}%"></div>
-                        </div>
-                    </dd>
+                @if(!$ticket->isOnHold())
+                <div>
+                    <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">TAT Progress</span><span class="text-gray-600">{{ $ticket->tatProgress() }}%</span></div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full {{ $ticket->tatProgress() >= 100 ? 'bg-red-500' : ($ticket->tatProgress() >= 75 ? 'bg-yellow-500' : 'bg-green-500') }}"
+                            style="width: {{ min(100, $ticket->tatProgress()) }}%"></div>
+                    </div>
                 </div>
+                @endif
+                @if($ticket->hold_total_seconds > 0)
+                <div class="flex justify-between"><dt class="text-gray-500">Hold time</dt><dd class="text-purple-600 font-medium text-right">{{ gmdate('H:i', $ticket->hold_total_seconds) }} h</dd></div>
+                @endif
             </dl>
         </div>
 
-        <!-- Update Status -->
-        @can('update', $ticket)
-        <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="font-semibold text-gray-700 mb-3 text-sm">Update Status</h3>
-            <form method="POST" action="{{ route('tickets.status', $ticket) }}" class="space-y-2">
-                @csrf @method('PATCH')
-                <select name="status" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                    @foreach(['open','assigned','in_progress','pending_info','resolved','closed'] as $s)
-                    <option value="{{ $s }}" {{ $ticket->status === $s ? 'selected' : '' }}>{{ ucfirst(str_replace('_',' ',$s)) }}</option>
-                    @endforeach
-                </select>
-                <button type="submit" class="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600">Update Status</button>
-            </form>
-        </div>
-        @endcan
-
-        <!-- Assign -->
         @can('assign', $ticket)
-        @if(count($assignableUsers) > 0)
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="font-semibold text-gray-700 mb-3 text-sm">Assign Ticket</h3>
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">Re-assign Ticket</h3>
             <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="space-y-2">
                 @csrf
                 <select name="assigned_to" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                    <option value="">Select engineer...</option>
-                    @foreach($assignableUsers as $u)
-                    <option value="{{ $u['id'] }}" {{ $ticket->assigned_to == $u['id'] ? 'selected' : '' }}>{{ $u['name'] }} ({{ $u['role'] }})</option>
+                    <option value="">Select resolver...</option>
+                    @foreach(\App\Models\User::where('role','resolver')->where('is_active', true)->orderBy('name')->get() as $u)
+                    <option value="{{ $u->id }}" {{ $ticket->assigned_to == $u->id ? 'selected' : '' }}>
+                        {{ $u->name }} ({{ $u->resolver_level ?: 'resolver' }}{{ $u->assigned_support_type ? ' · '.$u->assigned_support_type : '' }})
+                    </option>
                     @endforeach
                 </select>
                 <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">Assign</button>
             </form>
         </div>
-        @endif
         @endcan
 
-        <!-- Attachments -->
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="font-semibold text-gray-700 mb-3 text-sm">Attachments</h3>
             @forelse($ticket->attachments as $att)
@@ -148,11 +223,14 @@
             @empty
             <p class="text-xs text-gray-400">No attachments.</p>
             @endforelse
+
+            @can('attach', $ticket)
             <form method="POST" action="{{ route('tickets.attachment', $ticket) }}" enctype="multipart/form-data" class="mt-3">
                 @csrf
                 <input type="file" name="attachment" class="text-sm text-gray-500 mb-2 block">
                 <button type="submit" class="w-full bg-gray-100 text-gray-700 py-2 rounded text-sm hover:bg-gray-200">Upload</button>
             </form>
+            @endcan
         </div>
     </div>
 </div>

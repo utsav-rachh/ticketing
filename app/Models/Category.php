@@ -1,10 +1,13 @@
 <?php
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
+    use Auditable;
+
     protected $fillable = ['support_type','name','description','is_active','sort_order'];
     protected $casts = ['is_active' => 'boolean'];
 

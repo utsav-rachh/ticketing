@@ -174,6 +174,23 @@
                 <div class="flex justify-between"><dt class="text-gray-500">Assigned To</dt><dd class="font-medium text-right">{{ $ticket->assignee->name ?? 'Unassigned' }}</dd></div>
                 @if($ticket->vendor)
                 <div class="flex justify-between"><dt class="text-gray-500">Vendor</dt><dd class="font-medium text-right">{{ $ticket->vendor->name }}</dd></div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Vendor Ref #</dt>
+                    <dd class="font-mono text-xs text-right {{ $ticket->vendor_reference ? 'text-gray-800' : 'text-gray-400 italic' }}">
+                        {{ $ticket->vendor_reference ?: 'not set' }}
+                    </dd>
+                </div>
+                @can('updateStatus', $ticket)
+                <form method="POST" action="{{ route('tickets.vendorRef', $ticket) }}" class="flex gap-1 pt-1">
+                    @csrf
+                    @method('PATCH')
+                    <input type="text" name="vendor_reference" value="{{ $ticket->vendor_reference }}" maxlength="100"
+                           placeholder="e.g. DELL-2026-0042"
+                           class="flex-1 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-brand-400">
+                    <button type="submit" class="text-white px-2 py-1 rounded text-xs" style="background:#0056B3;">Save</button>
+                </form>
+                @error('vendor_reference') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                @endcan
                 @endif
                 <div class="flex justify-between"><dt class="text-gray-500">Contact</dt><dd class="text-right text-xs">{{ $ticket->employee_contact_name }}<br><span class="text-gray-500">{{ $ticket->employee_contact_phone }}</span></dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd class="text-gray-600 text-right">{{ $ticket->created_at->format('d M Y, H:i') }}</dd></div>

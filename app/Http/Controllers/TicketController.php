@@ -335,6 +335,37 @@ class TicketController extends Controller
         return back()->with('success', 'Attachment uploaded.');
     }
 
+    public function setVendorReference(Request $request, Ticket $ticket)
+    {
+        $this->authorize('updateStatus', $ticket);
+        if ($ticket->support_type !== 'infrastructure' || !$ticket->vendor_id) {
+            return back()->withErrors(['vendor_reference' => 'Vendor reference applies only to infrastructure tickets with a vendor set.']);
+        }
+        $data = $request->validate([
+            'vendor_reference' => 'nullable|string|max:100',
+        ]);
+
+        $old = $ticket->vendor_reference;
+        $new = $data['vendor_reference'] ?? null;
+        if ($old === $new) {
+            return back();
+        }
+        $ticket->update(['vendor_reference' => $new]);
+
+        TicketActivity::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => $request->user()->id,
+            'action_type' => 'vendor_reference_updated',
+            'description' => $new
+                ? 'Vendor reference set to: ' . $new
+                : 'Vendor reference cleared',
+            'old_value'   => $old,
+            'new_value'   => $new,
+        ]);
+
+        return back()->with('success', 'Vendor reference updated.');
+    }
+
     public function toggleRedFlag(Request $request, Ticket $ticket)
     {
         $this->authorize('toggleRedFlag', $ticket);

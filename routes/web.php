@@ -36,6 +36,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::post('/tickets/{ticket}/expense',   [TicketController::class, 'addExpense'])->name('tickets.expense');
     Route::post('/tickets/{ticket}/attachment',[TicketController::class, 'addAttachment'])->name('tickets.attachment');
     Route::post('/tickets/{ticket}/red-flag',  [TicketController::class, 'toggleRedFlag'])->name('tickets.redflag');
+    Route::patch('/tickets/{ticket}/vendor-reference', [TicketController::class, 'setVendorReference'])->name('tickets.vendorRef');
 
     // Team
     Route::middleware('role:resolver,admin')->group(function () {

@@ -9,7 +9,7 @@ class Ticket extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'ticket_number','support_type','category_id','subcategory_id','branch_id','vendor_id',
+        'ticket_number','support_type','category_id','subcategory_id','branch_id','vendor_id','vendor_reference',
         'subject','description','custom_issue','priority','status','is_red_flag',
         'created_by','assigned_to','assigned_by',
         'employee_contact_name','employee_contact_phone','employee_contact_email',

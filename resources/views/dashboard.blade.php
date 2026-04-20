@@ -31,15 +31,18 @@
 @endif
 
 @if(!empty($byType))
-<div class="bg-white rounded-lg shadow p-6 mb-6">
-    <h3 class="text-sm font-semibold text-gray-700 mb-3">Tickets (last 30 days by type)</h3>
-    <div class="flex items-end gap-6 h-32">
-        @php $max = max($byType ?: [1]); @endphp
-        @foreach(['application' => 'Application','infrastructure' => 'Infrastructure','admin' => 'Admin'] as $k => $label)
-        <div class="flex flex-col items-center gap-1 flex-1">
-            <div class="text-xs text-gray-500">{{ $byType[$k] ?? 0 }}</div>
-            <div class="w-full max-w-[60px] bg-brand-500 rounded-t" style="height: {{ ($byType[$k] ?? 0) / $max * 100 }}%"></div>
-            <div class="text-xs text-gray-500">{{ $label }}</div>
+<div class="bg-white rounded-lg shadow px-4 py-3 mb-6">
+    <h3 class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">Tickets — last 30 days by type</h3>
+    @php $max = max($byType ?: [1]); @endphp
+    <div class="space-y-1.5">
+        @foreach(['application' => 'Application','infrastructure' => 'Infrastructure','admin' => 'Admin / HR'] as $k => $label)
+        @php $count = $byType[$k] ?? 0; @endphp
+        <div class="flex items-center gap-3 text-xs">
+            <div class="w-28 text-gray-600">{{ $label }}</div>
+            <div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div class="h-full bg-brand-500 rounded-full" style="width: {{ $max > 0 ? ($count / $max * 100) : 0 }}%"></div>
+            </div>
+            <div class="w-6 text-right font-semibold text-gray-800">{{ $count }}</div>
         </div>
         @endforeach
     </div>

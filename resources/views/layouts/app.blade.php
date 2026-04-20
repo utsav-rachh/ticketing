@@ -19,6 +19,9 @@
         aside.sidebar[data-collapsed="true"] .sidebar-footer { display: none; }
         aside.sidebar[data-collapsed="true"] .logo-wrap     { justify-content: center; padding-left: 0; padding-right: 0; }
         aside.sidebar[data-collapsed="true"] .section-label { display: none; }
+        /* Hide scrollbar on sidebar nav (still scrollable via wheel/drag) */
+        aside.sidebar nav { scrollbar-width: none; -ms-overflow-style: none; }
+        aside.sidebar nav::-webkit-scrollbar { width: 0; height: 0; display: none; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased">

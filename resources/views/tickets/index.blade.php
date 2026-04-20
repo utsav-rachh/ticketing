@@ -11,60 +11,76 @@
     </div>
 </div>
 
-<form method="GET" class="bg-white shadow rounded p-4 grid grid-cols-2 md:grid-cols-6 gap-3 mb-4 text-sm">
-    <label>
-        <span class="text-xs font-medium text-gray-500">Status</span>
-        <select name="status" class="w-full border border-gray-300 rounded px-2 py-1.5">
-            <option value="">— all —</option>
-            @foreach(['open','assigned','in_progress','pending_info','hold','resolved','closed'] as $s)
-            <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ str_replace('_',' ',$s) }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label>
-        <span class="text-xs font-medium text-gray-500">Type</span>
-        <select name="support_type" class="w-full border border-gray-300 rounded px-2 py-1.5">
-            <option value="">— all —</option>
-            @foreach(['application','infrastructure','admin'] as $t)
-            <option value="{{ $t }}" {{ request('support_type') === $t ? 'selected' : '' }}>{{ $t }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label>
-        <span class="text-xs font-medium text-gray-500">Priority</span>
-        <select name="priority" class="w-full border border-gray-300 rounded px-2 py-1.5">
-            <option value="">— all —</option>
-            @foreach(['critical','high','medium','low'] as $p)
-            <option value="{{ $p }}" {{ request('priority') === $p ? 'selected' : '' }}>{{ $p }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label>
-        <span class="text-xs font-medium text-gray-500">Region</span>
-        <select name="region_id" class="w-full border border-gray-300 rounded px-2 py-1.5">
-            <option value="">— all —</option>
-            @foreach(\App\Models\Region::active()->orderBy('name')->get() as $r)
-            <option value="{{ $r->id }}" {{ request('region_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label>
-        <span class="text-xs font-medium text-gray-500">From</span>
-        <input type="date" name="from" value="{{ request('from') }}" class="w-full border border-gray-300 rounded px-2 py-1.5">
-    </label>
-    <label>
-        <span class="text-xs font-medium text-gray-500">To</span>
-        <input type="date" name="to" value="{{ request('to') }}" class="w-full border border-gray-300 rounded px-2 py-1.5">
-    </label>
-    <div class="md:col-span-6 flex items-center gap-2">
-        <label class="inline-flex items-center gap-2 text-xs text-gray-600">
-            <input type="checkbox" name="is_red_flag" value="1" {{ request('is_red_flag') ? 'checked' : '' }}>
-            Red-flagged only
+@php
+    $activeFilters = collect(['status','support_type','priority','region_id','from','to','is_red_flag'])
+        ->filter(fn ($k) => request()->filled($k))->count();
+@endphp
+<details class="bg-white shadow rounded mb-4" {{ $activeFilters > 0 ? 'open' : '' }}>
+    <summary class="cursor-pointer px-4 py-2.5 text-sm font-medium text-gray-700 flex items-center justify-between select-none">
+        <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            Filters
+            @if($activeFilters > 0)
+                <span class="bg-brand-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">{{ $activeFilters }} active</span>
+            @endif
+        </span>
+        <svg class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </summary>
+    <form method="GET" class="px-4 pb-4 pt-2 grid grid-cols-2 md:grid-cols-6 gap-3 text-sm border-t border-gray-100">
+        <label>
+            <span class="text-xs font-medium text-gray-500">Status</span>
+            <select name="status" class="w-full border border-gray-300 rounded px-2 py-1.5">
+                <option value="">— all —</option>
+                @foreach(['open','assigned','in_progress','pending_info','hold','resolved','closed'] as $s)
+                <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ str_replace('_',' ',$s) }}</option>
+                @endforeach
+            </select>
         </label>
-        <button type="submit" class="text-white px-4 py-1.5 rounded text-sm" style="background:#0056B3;">Filter</button>
-        <a href="{{ route('tickets.index') }}" class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-sm">Clear</a>
-    </div>
-</form>
+        <label>
+            <span class="text-xs font-medium text-gray-500">Type</span>
+            <select name="support_type" class="w-full border border-gray-300 rounded px-2 py-1.5">
+                <option value="">— all —</option>
+                @foreach(['application','infrastructure','admin'] as $t)
+                <option value="{{ $t }}" {{ request('support_type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label>
+            <span class="text-xs font-medium text-gray-500">Priority</span>
+            <select name="priority" class="w-full border border-gray-300 rounded px-2 py-1.5">
+                <option value="">— all —</option>
+                @foreach(['critical','high','medium','low'] as $p)
+                <option value="{{ $p }}" {{ request('priority') === $p ? 'selected' : '' }}>{{ $p }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label>
+            <span class="text-xs font-medium text-gray-500">Region</span>
+            <select name="region_id" class="w-full border border-gray-300 rounded px-2 py-1.5">
+                <option value="">— all —</option>
+                @foreach(\App\Models\Region::active()->orderBy('name')->get() as $r)
+                <option value="{{ $r->id }}" {{ request('region_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label>
+            <span class="text-xs font-medium text-gray-500">From</span>
+            <input type="date" name="from" value="{{ request('from') }}" class="w-full border border-gray-300 rounded px-2 py-1.5">
+        </label>
+        <label>
+            <span class="text-xs font-medium text-gray-500">To</span>
+            <input type="date" name="to" value="{{ request('to') }}" class="w-full border border-gray-300 rounded px-2 py-1.5">
+        </label>
+        <div class="md:col-span-6 flex items-center gap-2">
+            <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                <input type="checkbox" name="is_red_flag" value="1" {{ request('is_red_flag') ? 'checked' : '' }}>
+                Red-flagged only
+            </label>
+            <button type="submit" class="text-white px-4 py-1.5 rounded text-sm" style="background:#0056B3;">Apply</button>
+            <a href="{{ route('tickets.index') }}" class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-sm">Clear</a>
+        </div>
+    </form>
+</details>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">

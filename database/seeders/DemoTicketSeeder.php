@@ -236,7 +236,7 @@ class DemoTicketSeeder extends Seeder
                 'activities'    => [
                     ['action_type' => 'created',  'description' => 'Ticket created',                 'user' => $md,    'at' => Carbon::now()->subHours(30)],
                     ['action_type' => 'assigned', 'description' => 'Assigned to ' . $infraTL->name, 'user' => $admin, 'at' => Carbon::now()->subHours(30)],
-                    ['action_type' => 'tat_breached', 'description' => 'TAT breached', 'user' => null, 'at' => Carbon::now()->subHours(28)],
+                    ['action_type' => 'tat_breached', 'description' => 'TAT breached', 'user' => $admin, 'at' => Carbon::now()->subHours(28)],
                 ],
             ],
 

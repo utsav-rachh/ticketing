@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\TicketExpense;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -38,6 +39,16 @@ class DashboardController extends Controller
         $recentTickets = (clone $base)->with(['creator','category','assignee','branch.region'])
             ->latest()->take(10)->get();
 
-        return view('dashboard', compact('stats','pendingExpenseCount','byType','recentTickets'));
+        $canQuickAssign = $user->isAdmin() || $user->isITHead() || $user->isTL();
+        $assignableUsers = collect();
+        if ($canQuickAssign) {
+            $q = User::where('role', 'resolver')->where('is_active', true);
+            if ($user->isTL()) {
+                $q->where('assigned_support_type', $user->assigned_support_type);
+            }
+            $assignableUsers = $q->orderBy('name')->get(['id','name','resolver_level','assigned_support_type']);
+        }
+
+        return view('dashboard', compact('stats','pendingExpenseCount','byType','recentTickets','canQuickAssign','assignableUsers'));
     }
 }

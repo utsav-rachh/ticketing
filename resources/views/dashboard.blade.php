@@ -1,22 +1,22 @@
 @extends('layouts.app')
 @section('title', 'Dashboard')
 @section('content')
-<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
     @foreach([
-        ['Total','total','blue'],
-        ['Open','open','blue'],
-        ['Assigned','assigned','indigo'],
-        ['In Progress','in_progress','yellow'],
-        ['On Hold','hold','purple'],
-        ['Resolved','resolved','green'],
-        ['Closed','closed','gray'],
-        ['Pending Info','pending_info','orange'],
-        ['TAT Violated','violated','red'],
-        ['Red-Flagged','red_flag','red'],
-    ] as [$label,$key,$color])
-    <div class="bg-white rounded-lg shadow p-3 border-l-4 border-{{ $color }}-500">
-        <div class="text-2xl font-bold text-gray-800">{{ $stats[$key] }}</div>
-        <div class="text-xs text-gray-500">{{ $label }}</div>
+        ['Total','total','border-blue-500'],
+        ['Open','open','border-sky-500'],
+        ['Assigned','assigned','border-indigo-500'],
+        ['In Progress','in_progress','border-yellow-500'],
+        ['On Hold','hold','border-purple-500'],
+        ['Resolved','resolved','border-green-500'],
+        ['Closed','closed','border-gray-400'],
+        ['Pending Info','pending_info','border-orange-500'],
+        ['TAT Violated','violated','border-red-500'],
+        ['Red-Flagged','red_flag','border-red-600'],
+    ] as [$label,$key,$borderClass])
+    <div class="bg-white rounded-lg shadow-sm px-3 py-2.5 border-l-4 {{ $borderClass }} flex flex-col justify-center">
+        <div class="text-xl font-bold text-gray-800 leading-tight">{{ $stats[$key] }}</div>
+        <div class="text-[11px] text-gray-500 mt-0.5">{{ $label }}</div>
     </div>
     @endforeach
 </div>
@@ -86,7 +86,23 @@
                     </td>
                     <td class="px-4 py-3 text-xs text-gray-600">{{ $ticket->branch->name ?? '—' }} / {{ $ticket->branch->region->name ?? '—' }}</td>
                     <td class="px-4 py-3 text-gray-600">{{ $ticket->creator->name ?? '—' }}</td>
-                    <td class="px-4 py-3 text-gray-600">{{ $ticket->assignee->name ?? 'Unassigned' }}</td>
+                    <td class="px-4 py-3 text-gray-600">
+                        @if($canQuickAssign && !in_array($ticket->status, ['resolved','closed']) && $assignableUsers->isNotEmpty())
+                        <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="flex items-center gap-1">
+                            @csrf
+                            <select name="assigned_to" class="border border-gray-300 rounded px-1.5 py-1 text-xs bg-white w-32" onchange="if(this.value) this.form.submit()">
+                                <option value="" disabled {{ $ticket->assigned_to ? '' : 'selected' }}>— Assign —</option>
+                                @foreach($assignableUsers as $u)
+                                <option value="{{ $u->id }}" {{ $ticket->assigned_to == $u->id ? 'selected' : '' }}>
+                                    {{ $u->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </form>
+                        @else
+                            {{ $ticket->assignee->name ?? 'Unassigned' }}
+                        @endif
+                    </td>
                     <td class="px-4 py-3 text-gray-400 text-xs">{{ $ticket->created_at->diffForHumans() }}</td>
                 </tr>
                 @empty

@@ -1,9 +1,9 @@
 @extends('layouts.app')
-@section('title', 'Regions')
+@section('title', 'States')
 @section('content')
 <div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-gray-700">Regions</h2>
-    <a href="{{ route('admin.regions.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">+ New region</a>
+    <h2 class="text-xl font-bold text-gray-700">States</h2>
+    <a href="{{ route('admin.regions.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">+ New state</a>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">

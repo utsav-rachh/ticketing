@@ -9,10 +9,12 @@ class RegionSeeder extends Seeder
     public function run(): void
     {
         $regions = [
-            ['name' => 'North',  'code' => 'RGN-N'],
-            ['name' => 'South',  'code' => 'RGN-S'],
-            ['name' => 'East',   'code' => 'RGN-E'],
-            ['name' => 'West',   'code' => 'RGN-W'],
+            ['name' => 'Andhra Pradesh', 'code' => 'ST-AP'],
+            ['name' => 'Karnataka',      'code' => 'ST-KA'],
+            ['name' => 'Maharashtra',    'code' => 'ST-MH'],
+            ['name' => 'Rajasthan',      'code' => 'ST-RJ'],
+            ['name' => 'Tamil Nadu',     'code' => 'ST-TN'],
+            ['name' => 'Telangana',      'code' => 'ST-TG'],
         ];
 
         foreach ($regions as $data) {

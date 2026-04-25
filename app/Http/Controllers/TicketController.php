@@ -158,25 +158,31 @@ class TicketController extends Controller
         $this->authorize('view', $ticket);
         $ticket->load([
             'creator','category','subcategory','assignee','branch.region','vendor',
-            'activities.user','updates.user','expenses.addedBy','expenses.approvedBy','attachments.uploader',
+            'activities.user','updates.user','updates.attachments',
+            'expenses.addedBy','expenses.approvedBy','attachments.uploader',
         ]);
 
-        // Unified timeline: ticket_updates + ticket_activities sorted by timestamp
+        // Unified timeline: newest first
         $timeline = collect()
             ->merge($ticket->activities->map(fn ($a) => (object) [
-                'kind' => 'activity', 'at' => $a->created_at, 'user' => $a->user,
-                'type' => $a->action_type, 'text' => $a->description,
-                'old'  => $a->old_value, 'new' => $a->new_value,
+                'kind'        => 'activity', 'at' => $a->created_at, 'user' => $a->user,
+                'type'        => $a->action_type, 'text' => $a->description,
+                'old'         => $a->old_value, 'new' => $a->new_value,
+                'attachments' => collect(),
             ]))
             ->merge($ticket->updates->map(fn ($u) => (object) [
-                'kind' => 'update', 'at' => $u->created_at, 'user' => $u->user,
-                'type' => 'update', 'text' => $u->note,
-                'old'  => $u->status_from, 'new' => $u->status_to,
+                'kind'        => 'update', 'at' => $u->created_at, 'user' => $u->user,
+                'type'        => 'update', 'text' => $u->note,
+                'old'         => $u->status_from, 'new' => $u->status_to,
+                'attachments' => $u->attachments,
             ]))
-            ->sortBy('at')
+            ->sortByDesc('at')
             ->values();
 
-        return view('tickets.show', compact('ticket', 'timeline'));
+        // Right-panel: only attachments NOT linked to an update (employee initial uploads)
+        $initialAttachments = $ticket->attachments->whereNull('update_id')->values();
+
+        return view('tickets.show', compact('ticket', 'timeline', 'initialAttachments'));
     }
 
     /**
@@ -187,13 +193,14 @@ class TicketController extends Controller
         $this->authorize('comment', $ticket);
 
         $rules = [
-            'status' => 'nullable|in:' . implode(',', self::STATUSES),
-            'note'   => 'nullable|string',
-            'attachment' => 'nullable|file|max:10240',
+            'status'         => 'nullable|in:' . implode(',', self::STATUSES),
+            'note'           => 'nullable|string',
+            'attachments'    => 'nullable|array',
+            'attachments.*'  => 'file|max:10240',
         ];
         $data = $request->validate($rules);
 
-        if (empty($data['status']) && empty($data['note']) && !$request->hasFile('attachment')) {
+        if (empty($data['status']) && empty($data['note']) && !$request->hasFile('attachments')) {
             return back()->withErrors(['note' => 'Enter a note, change the status, or upload a file.']);
         }
 
@@ -228,7 +235,7 @@ class TicketController extends Controller
             }
         }
 
-        TicketUpdate::create([
+        $ticketUpdate = TicketUpdate::create([
             'ticket_id'   => $ticket->id,
             'user_id'     => $user->id,
             'status_from' => $statusNew && $statusNew !== $statusOld ? $statusOld : null,
@@ -237,17 +244,20 @@ class TicketController extends Controller
             'created_at'  => now(),
         ]);
 
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $path = $file->store('attachments/' . $ticket->id, 'public');
-            TicketAttachment::create([
-                'ticket_id'   => $ticket->id,
-                'uploaded_by' => $user->id,
-                'file_name'   => $file->getClientOriginalName(),
-                'file_path'   => $path,
-                'file_size'   => $file->getSize(),
-                'mime_type'   => $file->getMimeType(),
-            ]);
+        if ($request->hasFile('attachments')) {
+            foreach ((array) $request->file('attachments') as $file) {
+                if (!$file) continue;
+                $path = $file->store('attachments/' . $ticket->id, 'public');
+                TicketAttachment::create([
+                    'ticket_id'   => $ticket->id,
+                    'update_id'   => $ticketUpdate->id,
+                    'uploaded_by' => $user->id,
+                    'file_name'   => $file->getClientOriginalName(),
+                    'file_path'   => $path,
+                    'file_size'   => $file->getSize(),
+                    'mime_type'   => $file->getMimeType(),
+                ]);
+            }
         }
 
         return back()->with('success', 'Update posted.');

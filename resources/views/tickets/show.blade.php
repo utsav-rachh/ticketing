@@ -65,39 +65,13 @@
         <!-- Unified Timeline -->
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="font-semibold text-gray-700 mb-4">Activity Timeline</h3>
-            <div class="space-y-3">
-                @forelse($timeline as $item)
-                <div class="flex gap-3 text-sm">
-                    <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {{ strtoupper(substr($item->user->name ?? 'S', 0, 1)) }}
-                    </div>
-                    <div class="flex-1">
-                        <span class="font-medium text-gray-700">{{ $item->user->name ?? 'System' }}</span>
-                        @if($item->old || $item->new)
-                            <span class="text-gray-500 ml-1">
-                                changed status:
-                                <span class="text-gray-600">{{ $item->old ?: '—' }}</span>
-                                &rarr;
-                                <span class="font-medium text-gray-800">{{ $item->new ?: '—' }}</span>
-                            </span>
-                        @endif
-                        @if($item->text)
-                            <div class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ $item->text }}</div>
-                        @endif
-                        <div class="text-xs text-gray-400 mt-0.5">{{ $item->at?->format('d M Y, H:i') }}</div>
-                    </div>
-                </div>
-                @empty
-                <p class="text-sm text-gray-400">No activity yet.</p>
-                @endforelse
-            </div>
 
             @can('comment', $ticket)
-            <form method="POST" action="{{ route('tickets.update', $ticket) }}" enctype="multipart/form-data" class="mt-6 border-t pt-4 space-y-3">
+            <form method="POST" action="{{ route('tickets.update', $ticket) }}" enctype="multipart/form-data" class="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
                 @csrf
                 @can('updateStatus', $ticket)
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <select name="status" class="border border-gray-300 rounded px-3 py-2 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <select name="status" class="border border-gray-300 rounded px-3 py-2 text-sm bg-white">
                         <option value="">— keep status —</option>
                         @foreach(['open','assigned','in_progress','pending_info','resolved','closed'] as $s)
                         <option value="{{ $s }}">{{ ucfirst(str_replace('_',' ',$s)) }}</option>
@@ -106,15 +80,19 @@
                         <option value="hold">Hold</option>
                         @endcan
                     </select>
-                    <input type="file" name="attachment" class="text-sm text-gray-500 md:col-span-2">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Attachments (multiple allowed)</label>
+                        <input type="file" name="attachments[]" multiple class="text-sm text-gray-500 w-full">
+                    </div>
                 </div>
                 @else
                 <div>
-                    <input type="file" name="attachment" class="text-sm text-gray-500">
+                    <label class="block text-xs text-gray-500 mb-1">Attachments (multiple allowed)</label>
+                    <input type="file" name="attachments[]" multiple class="text-sm text-gray-500">
                 </div>
                 @endcan
                 <textarea name="note" rows="2" placeholder="Add a note, update, or context…"
-                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"></textarea>
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white"></textarea>
                 @error('note') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                 @error('status') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                 <div class="flex justify-end">
@@ -122,6 +100,63 @@
                 </div>
             </form>
             @endcan
+
+            <div class="space-y-1">
+                @forelse($timeline as $item)
+                <div class="flex gap-3 text-sm py-3 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {{ strtoupper(substr($item->user->name ?? 'S', 0, 1)) }}
+                        </div>
+                        @if(!$loop->last)
+                        <div class="w-px flex-1 bg-gray-200 mt-1"></div>
+                        @endif
+                    </div>
+                    <div class="flex-1 pb-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-medium text-gray-700">{{ $item->user->name ?? 'System' }}</span>
+                            @if($item->old || $item->new)
+                            <span class="text-gray-500 text-xs">
+                                changed status:
+                                <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{{ $item->old ?: '—' }}</span>
+                                &rarr;
+                                <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">{{ $item->new ?: '—' }}</span>
+                            </span>
+                            @endif
+                            <span class="text-xs text-gray-400 ml-auto">{{ $item->at?->format('d M Y, H:i') }}</span>
+                        </div>
+                        @if($item->text)
+                        <div class="text-gray-700 mt-1 whitespace-pre-wrap">{{ $item->text }}</div>
+                        @endif
+
+                        {{-- Inline attachment previews --}}
+                        @if($item->attachments->isNotEmpty())
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            @foreach($item->attachments as $att)
+                            @if($att->isImage())
+                            <a href="{{ Storage::url($att->file_path) }}" target="_blank" class="block">
+                                <img src="{{ Storage::url($att->file_path) }}"
+                                     alt="{{ $att->file_name }}"
+                                     class="h-24 w-24 object-cover rounded border border-gray-200 hover:opacity-90 transition">
+                            </a>
+                            @else
+                            <a href="{{ Storage::url($att->file_path) }}" target="_blank"
+                               class="flex items-center gap-1.5 px-3 py-1.5 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs text-gray-700 transition max-w-xs">
+                                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                </svg>
+                                <span class="truncate">{{ $att->file_name }}</span>
+                            </a>
+                            @endif
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <p class="text-sm text-gray-400">No activity yet.</p>
+                @endforelse
+            </div>
         </div>
 
         <!-- Expenses (infrastructure + admin only) -->
@@ -170,7 +205,7 @@
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">Raised By</dt><dd class="font-medium text-right">{{ $ticket->creator->name }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Branch</dt><dd class="font-medium text-right">{{ $ticket->branch->name ?? '—' }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Region</dt><dd class="font-medium text-right">{{ $ticket->branch->region->name ?? '—' }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">State</dt><dd class="font-medium text-right">{{ $ticket->branch->region->name ?? '—' }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Assigned To</dt><dd class="font-medium text-right">{{ $ticket->assignee->name ?? 'Unassigned' }}</dd></div>
                 @if($ticket->vendor)
                 <div class="flex justify-between"><dt class="text-gray-500">Vendor</dt><dd class="font-medium text-right">{{ $ticket->vendor->name }}</dd></div>
@@ -230,21 +265,40 @@
         </div>
         @endcan
 
+        {{-- Employee attachments panel: view-only for resolvers, upload for employees --}}
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="font-semibold text-gray-700 mb-3 text-sm">Attachments</h3>
-            @forelse($ticket->attachments as $att)
-            <div class="flex items-center gap-2 py-1 text-sm">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                <a href="{{ Storage::url($att->file_path) }}" class="text-brand-500 hover:underline truncate" target="_blank">{{ $att->file_name }}</a>
+            <p class="text-xs text-gray-400 mb-3">Files submitted by the employee with the ticket.</p>
+
+            @forelse($initialAttachments as $att)
+            <div class="mb-2">
+                @if($att->isImage())
+                <a href="{{ Storage::url($att->file_path) }}" target="_blank" class="block">
+                    <img src="{{ Storage::url($att->file_path) }}"
+                         alt="{{ $att->file_name }}"
+                         class="w-full rounded border border-gray-200 object-cover max-h-48 hover:opacity-90 transition">
+                </a>
+                <p class="text-xs text-gray-500 mt-1 truncate">{{ $att->file_name }}</p>
+                @else
+                <a href="{{ Storage::url($att->file_path) }}" target="_blank"
+                   class="flex items-center gap-2 px-3 py-2 rounded border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs text-gray-700 transition">
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                    </svg>
+                    <span class="truncate">{{ $att->file_name }}</span>
+                    <span class="ml-auto text-gray-400 flex-shrink-0">{{ number_format($att->file_size / 1024, 0) }} KB</span>
+                </a>
+                @endif
             </div>
             @empty
             <p class="text-xs text-gray-400">No attachments.</p>
             @endforelse
 
             @can('attach', $ticket)
-            <form method="POST" action="{{ route('tickets.attachment', $ticket) }}" enctype="multipart/form-data" class="mt-3">
+            <form method="POST" action="{{ route('tickets.attachment', $ticket) }}" enctype="multipart/form-data" class="mt-3 border-t pt-3">
                 @csrf
-                <input type="file" name="attachment" class="text-sm text-gray-500 mb-2 block">
+                <label class="block text-xs text-gray-500 mb-1">Add attachment</label>
+                <input type="file" name="attachment" class="text-sm text-gray-500 mb-2 block w-full">
                 <button type="submit" class="w-full bg-gray-100 text-gray-700 py-2 rounded text-sm hover:bg-gray-200">Upload</button>
             </form>
             @endcan

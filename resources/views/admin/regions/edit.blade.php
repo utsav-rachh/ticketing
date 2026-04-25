@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', $region->exists ? 'Edit Region' : 'New Region')
+@section('title', $region->exists ? 'Edit State' : 'New State')
 @section('content')
 <div class="max-w-xl mx-auto bg-white rounded-lg shadow p-6">
-    <h2 class="text-lg font-bold text-gray-700 mb-4">{{ $region->exists ? 'Edit Region' : 'New Region' }}</h2>
+    <h2 class="text-lg font-bold text-gray-700 mb-4">{{ $region->exists ? 'Edit State' : 'New State' }}</h2>
     <form method="POST" action="{{ $region->exists ? route('admin.regions.update', $region) : route('admin.regions.store') }}">
         @csrf
         @if($region->exists) @method('PATCH') @endif

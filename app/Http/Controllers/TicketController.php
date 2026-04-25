@@ -174,13 +174,13 @@ class TicketController extends Controller
                 'kind'        => 'update', 'at' => $u->created_at, 'user' => $u->user,
                 'type'        => 'update', 'text' => $u->note,
                 'old'         => $u->status_from, 'new' => $u->status_to,
-                'attachments' => $u->attachments,
+                'attachments' => $u->relationLoaded('attachments') ? $u->attachments : collect(),
             ]))
             ->sortByDesc('at')
             ->values();
 
         // Right-panel: only attachments NOT linked to an update (employee initial uploads)
-        $initialAttachments = $ticket->attachments->whereNull('update_id')->values();
+        $initialAttachments = $ticket->attachments->filter(fn ($a) => empty($a->update_id))->values();
 
         return view('tickets.show', compact('ticket', 'timeline', 'initialAttachments'));
     }

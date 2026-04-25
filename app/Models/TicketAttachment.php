@@ -15,6 +15,6 @@ class TicketAttachment extends Model
 
     public function isImage(): bool
     {
-        return str_starts_with($this->mime_type ?? '', 'image/');
+        return strncmp($this->mime_type ?? '', 'image/', 6) === 0;
     }
 }

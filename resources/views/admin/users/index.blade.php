@@ -13,7 +13,7 @@
                 <th class="px-4 py-3 text-left">Email</th>
                 <th class="px-4 py-3 text-left">Role</th>
                 <th class="px-4 py-3 text-left">Level</th>
-                <th class="px-4 py-3 text-left">Branch / Region</th>
+                <th class="px-4 py-3 text-left">Branch / State</th>
                 <th class="px-4 py-3 text-left">Auto-route</th>
                 <th class="px-4 py-3 text-left">Flags</th>
                 <th class="px-4 py-3 text-left">Status</th>

@@ -62,7 +62,7 @@
                     <th class="px-4 py-3 text-left">Subject</th>
                     <th class="px-4 py-3 text-left">Priority</th>
                     <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-left">Branch / Region</th>
+                    <th class="px-4 py-3 text-left">Branch / State</th>
                     <th class="px-4 py-3 text-left">Raised By</th>
                     <th class="px-4 py-3 text-left">Assignee</th>
                     <th class="px-4 py-3 text-left">Created</th>

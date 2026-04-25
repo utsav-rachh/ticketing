@@ -6,9 +6,9 @@
 
 <form method="GET" class="bg-white shadow rounded p-4 flex items-end gap-3 mb-6">
     <label class="block flex-1 max-w-xs">
-        <span class="text-xs font-medium text-gray-500">Region</span>
+        <span class="text-xs font-medium text-gray-500">State</span>
         <select name="region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-            <option value="">— all regions —</option>
+            <option value="">— all states —</option>
             @foreach($regions as $r)
             <option value="{{ $r->id }}" {{ request('region_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
             @endforeach

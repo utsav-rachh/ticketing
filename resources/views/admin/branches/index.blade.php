@@ -11,7 +11,7 @@
             <tr>
                 <th class="px-4 py-3 text-left">Name</th>
                 <th class="px-4 py-3 text-left">Code</th>
-                <th class="px-4 py-3 text-left">Region</th>
+                <th class="px-4 py-3 text-left">State</th>
                 <th class="px-4 py-3 text-left">Status</th>
                 <th class="px-4 py-3"></th>
             </tr>

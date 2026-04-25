@@ -55,7 +55,7 @@
             </select>
         </label>
         <label>
-            <span class="text-xs font-medium text-gray-500">Region</span>
+            <span class="text-xs font-medium text-gray-500">State</span>
             <select name="region_id" class="w-full border border-gray-300 rounded px-2 py-1.5">
                 <option value="">— all —</option>
                 @foreach(\App\Models\Region::active()->orderBy('name')->get() as $r)

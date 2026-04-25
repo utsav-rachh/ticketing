@@ -52,7 +52,7 @@
         </select>
     </label>
     <label class="block">
-        <span class="text-xs font-medium text-gray-500">Region</span>
+        <span class="text-xs font-medium text-gray-500">State</span>
         <select name="region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             <option value="">—</option>
             @foreach($regions as $r)
@@ -61,7 +61,7 @@
         </select>
     </label>
     <label class="block">
-        <span class="text-xs font-medium text-gray-500">Auto-route region (resolver only)</span>
+        <span class="text-xs font-medium text-gray-500">Auto-route state (resolver only)</span>
         <select name="assigned_region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             <option value="">— any —</option>
             @foreach($regions as $r)

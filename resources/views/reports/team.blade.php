@@ -9,7 +9,7 @@
             <tr>
                 <th class="px-4 py-3 text-left">Resolver</th>
                 <th class="px-4 py-3 text-left">Level</th>
-                <th class="px-4 py-3 text-left">Region</th>
+                <th class="px-4 py-3 text-left">State</th>
                 <th class="px-4 py-3 text-right">Assigned</th>
                 <th class="px-4 py-3 text-right">Resolved</th>
                 <th class="px-4 py-3 text-right">TAT Violated</th>

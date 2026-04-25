@@ -11,7 +11,7 @@ class TicketAttachment extends Model
 
     public function ticket()     { return $this->belongsTo(Ticket::class); }
     public function uploader()   { return $this->belongsTo(User::class, 'uploaded_by'); }
-    public function update()     { return $this->belongsTo(TicketUpdate::class, 'update_id'); }
+    public function ticketUpdate() { return $this->belongsTo(TicketUpdate::class, 'update_id'); }
 
     public function isImage(): bool
     {

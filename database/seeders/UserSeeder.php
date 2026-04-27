@@ -11,130 +11,246 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $north  = Region::where('code', 'RGN-N')->first();
-        $south  = Region::where('code', 'RGN-S')->first();
-        $east   = Region::where('code', 'RGN-E')->first();
-        $west   = Region::where('code', 'RGN-W')->first();
-        $mumbai = Branch::where('code', 'BR-MUM-01')->first();
+        $regions = Region::pluck('id', 'code'); // 'ST-MH' => 1, ...
+        $puneCorp = Branch::where('code', 'BR-MH-01')->first();   // Pune Corporate Office
+        $hydRO    = Branch::where('code', 'BR-TG-01')->first();   // Hyderabad RO
 
-        $users = [
-            // Admin
-            ['name' => 'Admin',
-             'email' => 'admin@altumcredo.com',
-             'role' => 'admin',
-             'password' => 'admin@123',
-             'department' => 'IT'],
+        // ─── Admin ────────────────────────────────────────────────
+        $this->upsert([
+            'name'       => 'Admin',
+            'email'      => 'admin@altumcredo.com',
+            'password'   => 'admin@123',
+            'role'       => 'admin',
+            'department' => 'IT',
+        ]);
 
-            // IT Head — Yogesh
-            ['name' => 'Yogesh',
-             'email' => 'yogesh@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'it_head',
-             'password' => 'ithead@123',
-             'department' => 'IT'],
+        // ─── Resolver hierarchy ───────────────────────────────────
+        // IT Head — supervises both TLs
+        $yogesh = $this->upsert([
+            'name'           => 'Yogesh K Pawar',
+            'email'          => 'yogesh@altumcredo.com',
+            'password'       => 'ithead@123',
+            'role'           => 'resolver',
+            'resolver_level' => 'it_head',
+            'department'     => 'IT',
+            'employee_id'    => '11362',
+            'phone'          => '1234561234',
+            'is_management'  => true, // CISO — also files critical management tickets
+            'branch_id'      => $puneCorp?->id,
+            'region_id'      => $regions['ST-MH'] ?? null,
+        ]);
 
-            // Senior Application Support (TL) — Prashant
-            ['name' => 'Prashant',
-             'email' => 'prashant@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'tl',
-             'assigned_support_type' => 'application',
-             'password' => 'tl@123',
-             'department' => 'IT'],
+        // Application TL — Prashant
+        $prashant = $this->upsert([
+            'name'                  => 'Prashant Vijay Diwase',
+            'email'                 => 'prashant.d@altumcredo.com',
+            'password'              => 'tl@123',
+            'role'                  => 'resolver',
+            'resolver_level'        => 'tl',
+            'assigned_support_type' => 'application',
+            'department'            => 'IT',
+            'employee_id'           => '11630',
+            'reports_to'            => $yogesh->id,
+            'branch_id'             => $puneCorp?->id,
+            'region_id'             => $regions['ST-MH'] ?? null,
+        ]);
 
-            // Junior Application Support — Sayali (all regions by default)
-            ['name' => 'Sayali',
-             'email' => 'sayali@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'junior',
-             'assigned_support_type' => 'application',
-             'password' => 'junior@123',
-             'department' => 'IT'],
+        // Infra TL — Vishal Savale
+        $vishalSavale = $this->upsert([
+            'name'                  => 'Vishal Savale',
+            'email'                 => 'vishal@altumcredo.com',
+            'password'              => 'tl@123',
+            'role'                  => 'resolver',
+            'resolver_level'        => 'tl',
+            'assigned_support_type' => 'infrastructure',
+            'department'            => 'IT',
+            'employee_id'           => '11727',
+            'reports_to'            => $yogesh->id,
+            'branch_id'             => $puneCorp?->id,
+            'region_id'             => $regions['ST-MH'] ?? null,
+        ]);
 
-            // Senior IT Infrastructure (TL) — Vishal
-            ['name' => 'Vishal',
-             'email' => 'vishal@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'tl',
-             'assigned_support_type' => 'infrastructure',
-             'password' => 'tl@123',
-             'department' => 'IT'],
-
-            // Junior IT Infrastructure — Utsav
-            ['name' => 'Utsav',
-             'email' => 'utsav@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'junior',
-             'assigned_support_type' => 'infrastructure',
-             'password' => 'junior@123',
-             'department' => 'IT'],
-
-            // Senior Admin/HR (TL) — placeholder
-            ['name' => 'TL Admin HR',
-             'email' => 'tl.adminhr@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'tl',
-             'assigned_support_type' => 'admin',
-             'password' => 'tl@123',
-             'department' => 'HR'],
-
-            // Junior Admin/HR — placeholder
-            ['name' => 'Junior Admin HR',
-             'email' => 'junior.adminhr@altumcredo.com',
-             'role' => 'resolver',
-             'resolver_level' => 'junior',
-             'assigned_support_type' => 'admin',
-             'password' => 'junior@123',
-             'department' => 'HR'],
-
-            // Management / MD
-            ['name' => 'Managing Director',
-             'email' => 'md@altumcredo.com',
-             'role' => 'employee',
-             'password' => 'md@123',
-             'is_management' => true,
-             'department' => 'Management',
-             'branch_id' => $mumbai?->id,
-             'region_id' => $west?->id],
+        // ─── Application juniors (report to Prashant) ─────────────
+        $appJuniors = [
+            [
+                'name'        => 'Sayli Dinesh Upganlawar',
+                'email'       => 'sayali@altumcredo.com',
+                'employee_id' => '11363',
+                'states'      => ['ST-KA', 'ST-TN'],
+            ],
+            [
+                'name'        => 'Omkar Jadhav',
+                'email'       => 'omkar.jadhav@altumcredo.com',
+                'employee_id' => '13151',
+                'states'      => ['ST-AP', 'ST-TG'],
+            ],
+            [
+                'name'        => 'Kalyani Sunil Ganjare',
+                'email'       => 'kalyani.g@altumcredo.com',
+                'employee_id' => '12615',
+                'states'      => ['ST-MH', 'ST-RJ'],
+            ],
         ];
-
-        // Branch-level employees — one per branch, department set so tickets feel realistic
-        $branchEmployees = [
-            ['code' => 'BR-MUM-01', 'name' => 'Ravi Kulkarni',  'email' => 'ravi.mum@altumcredo.com',   'department' => 'Operations'],
-            ['code' => 'BR-PNE-01', 'name' => 'Neha Joshi',     'email' => 'neha.pne@altumcredo.com',   'department' => 'Sales'],
-            ['code' => 'BR-DEL-01', 'name' => 'Arjun Mehra',    'email' => 'arjun.del@altumcredo.com',  'department' => 'Credit'],
-            ['code' => 'BR-CHD-01', 'name' => 'Simran Kaur',    'email' => 'simran.chd@altumcredo.com', 'department' => 'HR'],
-            ['code' => 'BR-BLR-01', 'name' => 'Karthik Rao',    'email' => 'karthik.blr@altumcredo.com','department' => 'IT Support'],
-            ['code' => 'BR-CHN-01', 'name' => 'Priya Nair',     'email' => 'priya.chn@altumcredo.com',  'department' => 'Operations'],
-            ['code' => 'BR-KOL-01', 'name' => 'Anindya Sen',    'email' => 'anindya.kol@altumcredo.com','department' => 'Credit'],
-            ['code' => 'BR-BHU-01', 'name' => 'Manoj Panda',    'email' => 'manoj.bhu@altumcredo.com',  'department' => 'Sales'],
-        ];
-
-        foreach ($branchEmployees as $emp) {
-            $branch = Branch::where('code', $emp['code'])->first();
-            if (!$branch) continue;
-            $users[] = [
-                'name'       => $emp['name'],
-                'email'      => $emp['email'],
-                'role'       => 'employee',
-                'password'   => 'emp@123',
-                'department' => $emp['department'],
-                'branch_id'  => $branch->id,
-                'region_id'  => $branch->region_id,
-            ];
+        foreach ($appJuniors as $j) {
+            $user = $this->upsert([
+                'name'                  => $j['name'],
+                'email'                 => $j['email'],
+                'password'              => 'junior@123',
+                'role'                  => 'resolver',
+                'resolver_level'        => 'junior',
+                'assigned_support_type' => 'application',
+                'department'            => 'IT',
+                'employee_id'           => $j['employee_id'],
+                'reports_to'            => $prashant->id,
+                'branch_id'             => $puneCorp?->id,
+                'region_id'             => $regions['ST-MH'] ?? null,
+            ]);
+            $this->syncStates($user, $j['states'], $regions);
         }
 
-        foreach ($users as $data) {
-            $password = $data['password'];
-            unset($data['password']);
-            User::updateOrCreate(
-                ['email' => $data['email']],
-                $data + [
-                    'password'          => Hash::make($password),
-                    'is_active'         => true,
-                    'email_verified_at' => now(),
-                ]
-            );
+        // ─── Infra juniors (report to Vishal Savale) ──────────────
+        $infraJuniors = [
+            [
+                'name'        => 'Vishal Girase',
+                'email'       => 'it.trainee@altumcredo.com',
+                'employee_id' => '50135',
+                'states'      => ['ST-MH', 'ST-RJ', 'ST-KA'],
+            ],
+            [
+                'name'        => 'Kumar Phulchand Saroj',
+                'email'       => 'kumar@altumcredo.com',
+                'employee_id' => '11233',
+                'states'      => ['ST-AP', 'ST-TG', 'ST-TN'],
+            ],
+        ];
+        foreach ($infraJuniors as $j) {
+            $user = $this->upsert([
+                'name'                  => $j['name'],
+                'email'                 => $j['email'],
+                'password'              => 'junior@123',
+                'role'                  => 'resolver',
+                'resolver_level'        => 'junior',
+                'assigned_support_type' => 'infrastructure',
+                'department'            => 'IT',
+                'employee_id'           => $j['employee_id'],
+                'reports_to'            => $vishalSavale->id,
+                'branch_id'             => $puneCorp?->id,
+                'region_id'             => $regions['ST-MH'] ?? null,
+            ]);
+            $this->syncStates($user, $j['states'], $regions);
+        }
+
+        // ─── Management users (auto-critical, auto-flagged on create) ─
+        // Yogesh already created above with is_management=true.
+        $management = [
+            [
+                'name'        => 'Hari Shankar Reddy',
+                'email'       => 'hari@altumcredo.com',
+                'department'  => 'Sales',
+                'employee_id' => '10659',
+                'phone'       => '9951439000',
+                'branch_id'   => $hydRO?->id,
+                'region_code' => 'ST-TG',
+            ],
+            [
+                'name'        => 'Pankaj Maduskar',
+                'email'       => 'pankaj@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '14228',
+                'phone'       => '8655149712',
+            ],
+            [
+                'name'        => 'Sandeep Upadhyay',
+                'email'       => 'sandeep.upadhyay@altumcredo.com',
+                'department'  => 'Sales',
+                'employee_id' => '12984',
+                'phone'       => '3434343434',
+            ],
+            [
+                'name'        => 'Sanjay Chhabinath Tiwari',
+                'email'       => 'sanjay@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '10001',
+                'phone'       => '1212122222',
+            ],
+            [
+                'name'        => 'Sarveish Kharangate',
+                'email'       => 'sarveish@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '13385',
+                'phone'       => '1122334455',
+            ],
+            [
+                'name'        => 'Vikrant Vishwas Bhagwat',
+                'email'       => 'vikrant@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '10010',
+                'phone'       => '1110001001',
+            ],
+            [
+                'name'        => 'Vivek Jain',
+                'email'       => 'vivek@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '10233',
+                'phone'       => '3333344444',
+            ],
+            [
+                'name'        => 'Ravindra P Nankar',
+                'email'       => 'ravindra.n@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '12831',
+                'phone'       => '1231231234',
+            ],
+            [
+                'name'        => 'Ujjwal Kumar Verma',
+                'email'       => 'ujjwal@altumcredo.com',
+                'department'  => 'CEO Office',
+                'employee_id' => '12671',
+                'phone'       => '1234512345',
+            ],
+        ];
+
+        foreach ($management as $m) {
+            $regionCode = $m['region_code'] ?? 'ST-MH';
+            $branchId   = $m['branch_id']   ?? $puneCorp?->id;
+            $this->upsert([
+                'name'           => $m['name'],
+                'email'          => $m['email'],
+                'password'       => 'mgmt@123',
+                'role'           => 'employee',
+                'department'     => $m['department'],
+                'employee_id'    => $m['employee_id'],
+                'phone'          => $m['phone'],
+                'is_management'  => true,
+                'branch_id'      => $branchId,
+                'region_id'      => $regions[$regionCode] ?? null,
+            ]);
+        }
+    }
+
+    private function upsert(array $data): User
+    {
+        $password = $data['password'] ?? 'password';
+        unset($data['password']);
+
+        return User::updateOrCreate(
+            ['email' => $data['email']],
+            $data + [
+                'password'          => Hash::make($password),
+                'is_active'         => true,
+                'email_verified_at' => now(),
+            ]
+        );
+    }
+
+    /** @param array<int,string> $codes Region codes like ['ST-MH','ST-RJ'] */
+    private function syncStates(User $user, array $codes, $regions): void
+    {
+        $ids = collect($codes)->map(fn ($c) => $regions[$c] ?? null)->filter()->values()->all();
+        $user->assignedRegions()->sync($ids);
+        // Keep legacy assigned_region_id in sync with the first state for fallback paths.
+        if (!empty($ids)) {
+            $user->forceFill(['assigned_region_id' => $ids[0]])->save();
         }
     }
 }

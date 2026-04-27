@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             VendorSeeder::class,
             CategorySeeder::class,
             SubcategorySeeder::class,
+            WorkingHoursSeeder::class,
             TATConfigurationSeeder::class,
             UserSeeder::class,
         ]);

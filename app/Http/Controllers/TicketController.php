@@ -5,12 +5,12 @@ use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Region;
 use App\Models\Subcategory;
+use App\Models\TatConfiguration;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\TicketAttachment;
 use App\Models\TicketExpense;
 use App\Models\TicketUpdate;
-use App\Models\TatConfiguration;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Notifications\ExpenseSubmittedNotification;
@@ -24,7 +24,22 @@ use Illuminate\Support\Facades\Notification;
 
 class TicketController extends Controller
 {
-    private const STATUSES = ['open','assigned','in_progress','pending_info','hold','resolved','closed'];
+    private const STATUSES = ['open','assigned','in_progress','pending_info','hold','resolved','reopen','closed'];
+
+    /** Per-status allowed next statuses for the in-form dropdown. Closed is terminal. */
+    private const ALLOWED_TRANSITIONS = [
+        'open'         => ['in_progress','pending_info','hold','resolved','closed'],
+        'assigned'     => ['in_progress','pending_info','hold','resolved','closed'],
+        'in_progress'  => ['pending_info','hold','resolved','closed'],
+        'pending_info' => ['in_progress','hold','resolved','closed'],
+        'hold'         => ['in_progress','pending_info','resolved','closed'],
+        'resolved'     => ['closed'],
+        'reopen'       => ['in_progress','pending_info','hold','resolved','closed'],
+        'closed'       => [],
+    ];
+
+    /** Allowed extension whitelist for resolver attachments. */
+    private const ATTACHMENT_MIMES = 'xlsx,xls,docx,doc,pdf,png,jpg,jpeg';
 
     public function index(Request $request)
     {
@@ -71,7 +86,7 @@ class TicketController extends Controller
             'employee_contact_name'        => 'required|string|max:150',
             'employee_contact_phone'       => 'required|string|max:20',
             'employee_contact_email'       => 'nullable|email|max:150',
-            'attachments.*'  => 'nullable|file|max:10240',
+            'attachments.*'  => 'nullable|file|max:10240|mimes:' . self::ATTACHMENT_MIMES,
         ]);
 
         $user = $request->user();
@@ -85,9 +100,11 @@ class TicketController extends Controller
         $isManagement = (bool) $user->is_management;
         $priority     = $isManagement ? 'critical' : ($subcategory->default_priority ?: 'medium');
 
-        $tatHours = TatConfiguration::forPriority($priority)?->tat_hours ?? 8;
-
         $branchId = $data['branch_id'] ?? $user->branch_id;
+        $now      = now();
+
+        $tat      = app(TatCalculator::class);
+        $deadline = $tat->deadlineForStatus('open', $now);
 
         $ticket = Ticket::create([
             'ticket_number'  => Ticket::generateTicketNumber(),
@@ -107,8 +124,11 @@ class TicketController extends Controller
             'employee_contact_phone'       => $data['employee_contact_phone'] ?? $user->phone,
             'employee_contact_email'       => $data['employee_contact_email'] ?? $user->email,
             'employee_contact_employee_id' => $data['employee_contact_employee_id'] ?? $user->employee_id,
-            'tat_hours'      => $tatHours,
-            'tat_deadline'   => now()->addHours($tatHours),
+            'status_entered_at'   => $now,
+            'status_tat_deadline' => $deadline,
+            // Legacy columns kept populated for older readers.
+            'tat_hours'      => optional(TatConfiguration::forStatus('open'))->tat_hours ?? 0,
+            'tat_deadline'   => $deadline ?: $now,
         ]);
 
         if ($request->hasFile('attachments')) {
@@ -187,7 +207,9 @@ class TicketController extends Controller
         // Right-panel: only attachments NOT linked to an update (employee initial uploads)
         $initialAttachments = $ticket->attachments->filter(fn ($a) => empty($a->update_id))->values();
 
-        return view('tickets.show', compact('ticket', 'timeline', 'initialAttachments'));
+        $allowedNextStatuses = self::ALLOWED_TRANSITIONS[$ticket->status] ?? [];
+
+        return view('tickets.show', compact('ticket', 'timeline', 'initialAttachments', 'allowedNextStatuses'));
     }
 
     /**
@@ -197,11 +219,15 @@ class TicketController extends Controller
     {
         $this->authorize('comment', $ticket);
 
+        if ($ticket->isClosed()) {
+            return back()->withErrors(['status' => 'This ticket is closed.']);
+        }
+
         $rules = [
             'status'         => 'nullable|in:' . implode(',', self::STATUSES),
             'note'           => 'nullable|string',
             'attachments'    => 'nullable|array',
-            'attachments.*'  => 'file|max:10240',
+            'attachments.*'  => 'file|max:10240|mimes:' . self::ATTACHMENT_MIMES,
         ];
         $data = $request->validate($rules);
 
@@ -213,26 +239,34 @@ class TicketController extends Controller
         $statusOld = $ticket->status;
         $statusNew = $data['status'] ?? null;
 
-        // Status transitions are gated: employees cannot change status
+        // Status transitions are gated: employees cannot change status,
+        // and only declared transitions are allowed.
         if ($statusNew && $statusNew !== $statusOld) {
             if (! $request->user()->can('updateStatus', $ticket)) {
                 return back()->withErrors(['status' => 'You are not allowed to change the status.']);
             }
+            $allowed = self::ALLOWED_TRANSITIONS[$statusOld] ?? [];
+            if (!in_array($statusNew, $allowed, true)) {
+                return back()->withErrors(['status' => "Cannot move from {$statusOld} to {$statusNew}."]);
+            }
             if ($statusNew === 'hold' && ! $request->user()->can('hold', $ticket)) {
                 return back()->withErrors(['status' => 'Hold is only available for infrastructure tickets.']);
             }
-
-            // Hold-aware TAT bookkeeping
-            if ($statusOld === 'hold' && $statusNew !== 'hold') {
-                TatCalculator::releaseHold($ticket);
-            }
-            if ($statusNew === 'hold' && $statusOld !== 'hold') {
-                TatCalculator::beginHold($ticket);
+            // Reopen and close have dedicated endpoints; keep the form path for resolver-driven flow.
+            if ($statusNew === 'reopen') {
+                return back()->withErrors(['status' => 'Use the Reopen button to reopen a resolved ticket.']);
             }
 
-            $ticket->status = $statusNew;
-            if ($statusNew === 'resolved' && !$ticket->resolved_at) $ticket->resolved_at = now();
-            if ($statusNew === 'closed'   && !$ticket->closed_at)   $ticket->closed_at   = now();
+            $tat = app(TatCalculator::class);
+            $now = now();
+
+            $ticket->status            = $statusNew;
+            $ticket->status_entered_at = $now;
+            $ticket->status_tat_deadline = $tat->deadlineForStatus($statusNew, $now);
+            $ticket->is_tat_violated   = false;
+            $ticket->tat_notified_at   = null;
+            if ($statusNew === 'resolved' && !$ticket->resolved_at) $ticket->resolved_at = $now;
+            if ($statusNew === 'closed'   && !$ticket->closed_at)   $ticket->closed_at   = $now;
             $ticket->save();
 
             if ($ticket->creator) {
@@ -266,6 +300,111 @@ class TicketController extends Controller
         }
 
         return back()->with('success', 'Update posted.');
+    }
+
+    public function reopen(Request $request, Ticket $ticket)
+    {
+        $this->authorize('reopen', $ticket);
+
+        if ($ticket->status !== 'resolved') {
+            return back()->withErrors(['status' => 'Only resolved tickets can be reopened.']);
+        }
+
+        $data = $request->validate([
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        $now       = now();
+        $statusOld = $ticket->status;
+        $tat       = app(TatCalculator::class);
+
+        $ticket->status              = 'reopen';
+        $ticket->status_entered_at   = $now;
+        $ticket->status_tat_deadline = $tat->deadlineForStatus('reopen', $now);
+        $ticket->reopen_count        = (int) ($ticket->reopen_count ?? 0) + 1;
+        $ticket->reopened_at         = $now;
+        $ticket->resolved_at         = null;
+        $ticket->is_tat_violated     = false;
+        $ticket->tat_notified_at     = null;
+        $ticket->save();
+
+        $update = TicketUpdate::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => $request->user()->id,
+            'status_from' => $statusOld,
+            'status_to'   => 'reopen',
+            'note'        => $data['note'] ?? 'Ticket reopened by ' . $request->user()->name,
+            'created_at'  => $now,
+        ]);
+
+        TicketActivity::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => $request->user()->id,
+            'action_type' => 'reopened',
+            'description' => 'Ticket reopened by ' . $request->user()->name . ' (#' . $ticket->reopen_count . ')',
+            'old_value'   => $statusOld,
+            'new_value'   => 'reopen',
+        ]);
+
+        // Internal notification to the resolver and TL — never to the creator.
+        $recipients = collect();
+        if ($ticket->assignee) $recipients->push($ticket->assignee);
+        $tl = User::where('role','resolver')->where('resolver_level','tl')
+            ->where('assigned_support_type', $ticket->support_type)
+            ->where('is_active', true)->first();
+        if ($tl) $recipients->push($tl);
+        $recipients = $recipients->unique('id')
+            ->reject(fn ($u) => $u->id === $ticket->created_by);
+        Notification::send($recipients, new TicketStatusNotification($ticket, $statusOld, 'reopen'));
+
+        return back()->with('success', 'Ticket reopened.');
+    }
+
+    public function close(Request $request, Ticket $ticket)
+    {
+        $this->authorize('close', $ticket);
+
+        if (!in_array($ticket->status, ['resolved','reopen'], true)) {
+            return back()->withErrors(['status' => 'Only resolved or reopened tickets can be closed.']);
+        }
+
+        $data = $request->validate([
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        $now       = now();
+        $statusOld = $ticket->status;
+        $ticket->status              = 'closed';
+        $ticket->status_entered_at   = $now;
+        $ticket->status_tat_deadline = null;
+        $ticket->closed_at           = $now;
+        $ticket->is_tat_violated     = false;
+        $ticket->tat_notified_at     = null;
+        $ticket->save();
+
+        TicketUpdate::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => $request->user()->id,
+            'status_from' => $statusOld,
+            'status_to'   => 'closed',
+            'note'        => $data['note'] ?? 'Ticket closed by ' . $request->user()->name,
+            'created_at'  => $now,
+        ]);
+
+        TicketActivity::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => $request->user()->id,
+            'action_type' => 'closed',
+            'description' => 'Ticket closed by ' . $request->user()->name,
+            'old_value'   => $statusOld,
+            'new_value'   => 'closed',
+        ]);
+
+        if ($ticket->creator && $ticket->creator->id !== $request->user()->id) {
+            $ticket->creator->notify(new TicketStatusNotification($ticket, $statusOld, 'closed'));
+        }
+
+        return back()->with('success', 'Ticket closed.');
     }
 
     public function assign(Request $request, Ticket $ticket)
@@ -334,7 +473,7 @@ class TicketController extends Controller
     public function addAttachment(Request $request, Ticket $ticket)
     {
         $this->authorize('attach', $ticket);
-        $request->validate(['attachment' => 'required|file|max:10240']);
+        $request->validate(['attachment' => 'required|file|max:10240|mimes:' . self::ATTACHMENT_MIMES]);
         $file = $request->file('attachment');
         $path = $file->store('attachments/' . $ticket->id, 'public');
 

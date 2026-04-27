@@ -63,6 +63,8 @@ class TicketAssignmentService
         $ticket->assigned_to = $target->id;
         $ticket->assigned_by = null; // auto-assignment
         $ticket->assigned_at = now();
+        // 'assigned' shares the same TAT bucket as 'open' (it is just open + a resolver assigned),
+        // so we don't reset status_entered_at / status_tat_deadline here.
         if ($ticket->status === 'open') {
             $ticket->status = 'assigned';
         }

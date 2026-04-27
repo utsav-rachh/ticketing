@@ -7,71 +7,95 @@ use App\Models\TicketActivity;
 use App\Models\User;
 use App\Notifications\TATBreachedNotification;
 use App\Services\TatCalculator;
+use App\Services\WorkingHoursService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Notification;
 
 class CheckTATViolations extends Command
 {
     protected $signature = 'itsm:check-tat';
-    protected $description = 'Send TAT warning notifications to TL and escalation to IT Head when thresholds are crossed.';
+    protected $description = 'Per-status, working-hour-aware SLA checker. Notifies TLs at warning threshold and TLs+IT Heads at breach. Internal only.';
 
-    public function handle(): void
+    public function handle(TatCalculator $tat, WorkingHoursService $working): void
     {
+        // Honour working hours: outside business hours we don't burn the SLA,
+        // so we don't fire fresh notifications either.
+        if (!$working->isWorkingNow()) {
+            $this->info('Outside working hours — skipping.');
+            return;
+        }
+
         $tickets = Ticket::query()
-            ->whereNotIn('status', ['resolved','closed','hold'])
-            ->with(['assignee'])
+            ->whereIn('status', TatConfiguration::SLA_STATUSES)
+            ->whereNotNull('status_tat_deadline')
+            ->with(['assignee','creator'])
             ->get();
 
-        $warningsSent = 0;
+        $warningsSent   = 0;
         $violationsSent = 0;
 
         foreach ($tickets as $ticket) {
-            $cfg = TatConfiguration::forPriority($ticket->priority);
-            $warningPct = $cfg?->warning_threshold_pct ?? 75;
-            $totalSec = (int) round($ticket->tat_hours * 3600);
-            if ($totalSec <= 0) continue;
+            $cfg = TatConfiguration::forStatus($ticket->status);
+            if (!$cfg) continue;
 
-            $elapsedSec = $ticket->effectiveElapsedSeconds();
-            $pct = $elapsedSec * 100 / $totalSec;
+            $pct = $tat->progressPct($ticket);
+            if ($pct === null) continue;
 
-            // VIOLATION (>= 100%): notify IT Head(s), mark violated
+            $warningPct = $cfg->warning_threshold_pct ?? 80;
+
+            // VIOLATION (>= 100%): notify TL + IT Head, mark violated, log activity.
             if ($pct >= 100 && !$ticket->is_tat_violated) {
                 $ticket->update(['is_tat_violated' => true, 'tat_notified_at' => now()]);
                 $violationsSent++;
 
                 TicketActivity::create([
                     'ticket_id'   => $ticket->id,
-                    'user_id'     => $ticket->assigned_to ?? 1,
-                    'action_type' => 'note_added',
-                    'description' => "TAT VIOLATED — escalated to IT Head",
+                    'user_id'     => $ticket->assigned_to ?? optional($ticket->creator)->id,
+                    'action_type' => 'tat_violated',
+                    'description' => "[Internal] SLA violated for status '{$ticket->status}' — escalated to TL + IT Head",
                 ]);
 
-                $itHeads = User::where('role','resolver')->where('resolver_level','it_head')
-                    ->where('is_active', true)->get();
-                Notification::send($itHeads, new TATBreachedNotification($ticket));
-
-                // also loop TL in
-                if ($ticket->assignee && $ticket->assignee->isJunior()) {
-                    $tl = User::where('role','resolver')->where('resolver_level','tl')
-                        ->where('assigned_support_type', $ticket->support_type)
-                        ->where('is_active', true)->first();
-                    $tl?->notify(new TATBreachedNotification($ticket));
-                }
+                Notification::send(
+                    $this->internalRecipients($ticket, ['tl','it_head']),
+                    new TATBreachedNotification($ticket, true)
+                );
                 continue;
             }
 
-            // WARNING threshold crossed: notify TL once (we flag with tat_notified_at)
+            // WARNING threshold crossed: notify TL once.
             if ($pct >= $warningPct && !$ticket->tat_notified_at) {
                 $ticket->update(['tat_notified_at' => now()]);
                 $warningsSent++;
 
-                $tl = User::where('role','resolver')->where('resolver_level','tl')
-                    ->where('assigned_support_type', $ticket->support_type)
-                    ->where('is_active', true)->first();
-                $tl?->notify(new TATBreachedNotification($ticket));
+                Notification::send(
+                    $this->internalRecipients($ticket, ['tl']),
+                    new TATBreachedNotification($ticket, false)
+                );
             }
         }
 
         $this->info("Warnings: {$warningsSent} · Violations: {$violationsSent}");
+    }
+
+    /**
+     * Build the internal-only recipient list. Always excludes the ticket
+     * creator, even if they happen to be a resolver/admin (they would still
+     * be the wrong person to escalate to about their own ticket).
+     *
+     * @param  array<int,string> $levels  resolver levels to include
+     */
+    protected function internalRecipients(Ticket $ticket, array $levels)
+    {
+        return User::query()
+            ->where('role', 'resolver')
+            ->whereIn('resolver_level', $levels)
+            ->where('is_active', true)
+            ->where(function ($q) use ($ticket) {
+                $q->where('assigned_support_type', $ticket->support_type)
+                  ->orWhereNull('assigned_support_type');
+            })
+            ->where('id', '!=', $ticket->created_by)
+            ->get()
+            ->unique('id');
     }
 }

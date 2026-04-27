@@ -3,65 +3,75 @@ namespace App\Services;
 
 use App\Models\TatConfiguration;
 use App\Models\Ticket;
+use Illuminate\Support\Carbon;
 
 /**
- * Hold-aware TAT math. The wall-clock elapsed time is reduced by any
- * seconds the ticket has spent in 'hold' status so infrastructure
- * procurement waits don't burn the SLA.
+ * Per-status, working-hour-aware SLA math.
+ *
+ * Each status has its own TAT budget (open=2h, in_progress=8h, reopen=2h);
+ * Hold/Pending Info/Resolved/Closed are budget-less. The clock only burns
+ * during configured working windows (Mon-Sat 09:00-18:00 by default).
+ *
+ * TAT is purely internal: never surface to the ticket creator.
  */
 class TatCalculator
 {
-    public static function tatSeconds(string $priority): int
-    {
-        $cfg = TatConfiguration::forPriority($priority);
-        $hours = $cfg?->tat_hours ?? 24;
-        return (int) round(((float) $hours) * 3600);
-    }
-
-    public static function deadline(Ticket $ticket): \Illuminate\Support\Carbon
-    {
-        $base = $ticket->created_at ?: now();
-        return $base->copy()->addSeconds((int) round($ticket->tat_hours * 3600));
-    }
-
-    public static function effectiveElapsedSeconds(Ticket $ticket): int
-    {
-        return $ticket->effectiveElapsedSeconds();
-    }
-
-    public static function isPastWarning(Ticket $ticket): bool
-    {
-        $cfg = TatConfiguration::forPriority($ticket->priority);
-        $pct = $cfg?->warning_threshold_pct ?? 75;
-        $totalSeconds = (int) round($ticket->tat_hours * 3600);
-        if ($totalSeconds <= 0) return false;
-        return self::effectiveElapsedSeconds($ticket) >= ($totalSeconds * $pct / 100);
-    }
-
-    public static function isViolated(Ticket $ticket): bool
-    {
-        $totalSeconds = (int) round($ticket->tat_hours * 3600);
-        return self::effectiveElapsedSeconds($ticket) > $totalSeconds;
-    }
+    public function __construct(protected WorkingHoursService $workingHours) {}
 
     /**
-     * Called when a ticket is being moved OUT of 'hold'. Accumulates
-     * hold duration into hold_total_seconds on the ticket.
+     * Working-hour deadline for a given status starting at $from. Returns
+     * null when the status has no SLA budget (e.g. hold, resolved).
      */
-    public static function releaseHold(Ticket $ticket): void
+    public function deadlineForStatus(string $status, Carbon $from): ?Carbon
     {
-        if ($ticket->hold_started_at) {
-            $ticket->hold_total_seconds = (int) ($ticket->hold_total_seconds ?? 0)
-                + $ticket->hold_started_at->diffInSeconds(now());
-            $ticket->hold_started_at = null;
+        $cfg = TatConfiguration::forStatus($status);
+        if (!$cfg || (float) $cfg->tat_hours <= 0) {
+            return null;
         }
+        return $this->workingHours->addWorkingHours($from->copy(), (float) $cfg->tat_hours);
+    }
+
+    /** Has the current status burned past its deadline? */
+    public function isViolated(Ticket $ticket): bool
+    {
+        if (!in_array($ticket->status, TatConfiguration::SLA_STATUSES, true)) return false;
+        if (!$ticket->status_tat_deadline) return false;
+        return now()->greaterThan($ticket->status_tat_deadline);
     }
 
     /**
-     * Called when a ticket is being moved INTO 'hold'.
+     * 0..100 SLA progress for the current status, in working-hour seconds.
+     * Returns null when the status has no clock.
      */
-    public static function beginHold(Ticket $ticket): void
+    public function progressPct(Ticket $ticket): ?int
     {
-        $ticket->hold_started_at = now();
+        if (!in_array($ticket->status, TatConfiguration::SLA_STATUSES, true)) return null;
+        $cfg = TatConfiguration::forStatus($ticket->status);
+        if (!$cfg || (float) $cfg->tat_hours <= 0) return null;
+        $start = $ticket->status_entered_at ?: $ticket->created_at;
+        if (!$start) return null;
+
+        $budgetSec  = (int) round($cfg->tat_hours * 3600);
+        $elapsedSec = $this->workingHours->workingSecondsBetween($start, now());
+        if ($budgetSec <= 0) return 100;
+        return min(100, (int) floor($elapsedSec * 100 / $budgetSec));
+    }
+
+    /** Working-hour seconds elapsed in the current status. */
+    public function elapsedSeconds(Ticket $ticket): int
+    {
+        $start = $ticket->status_entered_at ?: $ticket->created_at;
+        if (!$start) return 0;
+        return $this->workingHours->workingSecondsBetween($start, now());
+    }
+
+    /** Should warning notifications fire (>= warning threshold of budget)? */
+    public function isPastWarning(Ticket $ticket): bool
+    {
+        if (!in_array($ticket->status, TatConfiguration::SLA_STATUSES, true)) return false;
+        $cfg = TatConfiguration::forStatus($ticket->status);
+        if (!$cfg || (float) $cfg->tat_hours <= 0) return false;
+        $pct = $this->progressPct($ticket);
+        return $pct !== null && $pct >= ($cfg->warning_threshold_pct ?? 80);
     }
 }

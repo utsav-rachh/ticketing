@@ -9,7 +9,9 @@
         <select name="auditable_type" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             <option value="">— any —</option>
             @foreach($types as $t)
-            <option value="{{ $t }}" {{ request('auditable_type') === $t ? 'selected' : '' }}>{{ class_basename($t) }}</option>
+            <option value="{{ $t }}" {{ request('auditable_type') === $t ? 'selected' : '' }}>
+                {{ \App\Models\AuditLog::MODEL_LABELS[$t] ?? class_basename($t) }}
+            </option>
             @endforeach
         </select>
     </label>
@@ -40,26 +42,41 @@
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
-                <th class="px-4 py-3 text-left">When</th>
-                <th class="px-4 py-3 text-left">User</th>
-                <th class="px-4 py-3 text-left">Model</th>
-                <th class="px-4 py-3 text-left">Action</th>
-                <th class="px-4 py-3 text-left">Changes</th>
-                <th class="px-4 py-3 text-left">IP</th>
+                <th class="px-4 py-3 text-left w-40">When</th>
+                <th class="px-4 py-3 text-left w-40">User</th>
+                <th class="px-4 py-3 text-left w-28">Action</th>
+                <th class="px-4 py-3 text-left">Change</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
             @forelse($logs as $log)
-            <tr class="hover:bg-gray-50 align-top">
+            <tr class="{{ $loop->odd ? 'bg-white' : 'bg-gray-50/40' }} hover:bg-blue-50/30 align-top">
                 <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ $log->created_at?->format('d M Y, H:i:s') }}</td>
                 <td class="px-4 py-3 text-xs text-gray-700">{{ $log->user->name ?? 'System' }}</td>
-                <td class="px-4 py-3 text-xs text-gray-600">{{ class_basename($log->auditable_type) }}#{{ $log->auditable_id }}</td>
-                <td class="px-4 py-3 text-xs"><span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700">{{ $log->action }}</span></td>
-                <td class="px-4 py-3 text-xs text-gray-600"><pre class="whitespace-pre-wrap break-all max-w-md text-[11px]">{{ json_encode($log->changes, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre></td>
-                <td class="px-4 py-3 text-xs text-gray-500">{{ $log->ip_address }}</td>
+                <td class="px-4 py-3 text-xs">
+                    <span class="px-2 py-0.5 rounded text-xs font-medium
+                        @switch($log->action)
+                            @case('created') bg-green-100 text-green-700 @break
+                            @case('updated') bg-blue-100 text-blue-700 @break
+                            @case('deleted')
+                            @case('force_deleted') bg-red-100 text-red-700 @break
+                            @default bg-gray-100 text-gray-700
+                        @endswitch">
+                        {{ $log->action }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-700">
+                    <div class="text-gray-800">{{ $log->humanLabel() }}</div>
+                    @if($log->changes)
+                    <details class="mt-1">
+                        <summary class="cursor-pointer text-[11px] text-gray-400 hover:text-gray-600 select-none">show raw</summary>
+                        <pre class="whitespace-pre-wrap break-all max-w-2xl text-[11px] text-gray-500 mt-1 bg-gray-50 p-2 rounded border border-gray-100">{{ json_encode($log->changes, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
+                    </details>
+                    @endif
+                </td>
             </tr>
             @empty
-            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No audit logs found.</td></tr>
+            <tr><td colspan="4" class="px-6 py-8 text-center text-gray-400">No audit logs found.</td></tr>
             @endforelse
         </tbody>
     </table>

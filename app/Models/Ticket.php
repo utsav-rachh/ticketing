@@ -1,6 +1,7 @@
 <?php
 namespace App\Models;
 
+use App\Services\TatCalculator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -14,19 +15,25 @@ class Ticket extends Model
         'created_by','assigned_to','assigned_by',
         'employee_contact_name','employee_contact_phone','employee_contact_email','employee_contact_employee_id',
         'assigned_at','hold_started_at','hold_total_seconds',
-        'resolved_at','closed_at','tat_hours','tat_deadline','is_tat_violated','tat_notified_at',
+        'resolved_at','closed_at','reopen_count','reopened_at',
+        'tat_hours','tat_deadline','is_tat_violated','tat_notified_at',
+        'status_entered_at','status_tat_deadline',
     ];
 
     protected $casts = [
-        'assigned_at'        => 'datetime',
-        'hold_started_at'    => 'datetime',
-        'hold_total_seconds' => 'integer',
-        'resolved_at'        => 'datetime',
-        'closed_at'          => 'datetime',
-        'tat_deadline'       => 'datetime',
-        'tat_notified_at'    => 'datetime',
-        'is_tat_violated'    => 'boolean',
-        'is_red_flag'        => 'boolean',
+        'assigned_at'         => 'datetime',
+        'hold_started_at'     => 'datetime',
+        'hold_total_seconds'  => 'integer',
+        'resolved_at'         => 'datetime',
+        'closed_at'           => 'datetime',
+        'reopened_at'         => 'datetime',
+        'reopen_count'        => 'integer',
+        'tat_deadline'        => 'datetime',
+        'tat_notified_at'     => 'datetime',
+        'status_entered_at'   => 'datetime',
+        'status_tat_deadline' => 'datetime',
+        'is_tat_violated'     => 'boolean',
+        'is_red_flag'         => 'boolean',
     ];
 
     public function creator()    { return $this->belongsTo(User::class, 'created_by'); }
@@ -75,33 +82,21 @@ class Ticket extends Model
         return $this->status === 'hold';
     }
 
-    /**
-     * Seconds elapsed since creation, excluding any time spent on hold.
-     */
-    public function effectiveElapsedSeconds(): int
+    public function isClosed(): bool
     {
-        $elapsed = $this->created_at ? $this->created_at->diffInSeconds(now()) : 0;
-        $elapsed -= (int) ($this->hold_total_seconds ?? 0);
-        if ($this->isOnHold() && $this->hold_started_at) {
-            $elapsed -= $this->hold_started_at->diffInSeconds(now());
-        }
-        return max(0, $elapsed);
+        return $this->status === 'closed';
     }
 
+    /** SLA progress for the current status (0..100, or null when no clock). */
+    public function tatProgress(): ?int
+    {
+        return app(TatCalculator::class)->progressPct($this);
+    }
+
+    /** Past the working-hour deadline of the current status. */
     public function isOverdue(): bool
     {
-        if (in_array($this->status, ['resolved','closed','hold'])) {
-            return false;
-        }
-        $tatSeconds = (int) round(((float) $this->tat_hours) * 3600);
-        return $this->effectiveElapsedSeconds() > $tatSeconds;
-    }
-
-    public function tatProgress(): int
-    {
-        $tatSeconds = (int) round(((float) $this->tat_hours) * 3600);
-        if ($tatSeconds <= 0) return 100;
-        return min(100, (int) ($this->effectiveElapsedSeconds() / $tatSeconds * 100));
+        return app(TatCalculator::class)->isViolated($this);
     }
 
     public static function generateTicketNumber(): string
@@ -153,6 +148,7 @@ class Ticket extends Model
             'pending_info' => 'orange',
             'hold'         => 'purple',
             'resolved'     => 'green',
+            'reopen'       => 'pink',
             'closed'       => 'gray',
             default        => 'gray',
         };

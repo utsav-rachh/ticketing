@@ -15,15 +15,17 @@
         </div>
         @endif
 
+        @can('viewSlaInternals', $ticket)
         @if($ticket->isOnHold())
         <div class="flex items-center gap-3 bg-purple-50 border border-purple-200 text-purple-800 rounded-lg p-4">
             <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div>
-                <div class="font-semibold">On Hold since {{ $ticket->hold_started_at?->format('d M Y, H:i') }}</div>
-                <div class="text-sm">TAT clock is paused until the ticket is moved off hold.</div>
+                <div class="font-semibold">On Hold since {{ $ticket->status_entered_at?->format('d M Y, H:i') }}</div>
+                <div class="text-sm">SLA clock is paused while on hold.</div>
             </div>
         </div>
         @endif
+        @endcan
 
         <!-- Header -->
         <div class="bg-white rounded-lg shadow p-6">
@@ -36,9 +38,14 @@
                             {{ ucfirst($ticket->priority) }}
                         </span>
                         <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">{{ ucfirst(str_replace('_',' ',$ticket->status)) }}</span>
-                        @if($ticket->is_tat_violated)
-                        <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-bold">TAT VIOLATED</span>
-                        @endif
+                        @can('viewSlaInternals', $ticket)
+                            @if($ticket->is_tat_violated)
+                            <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-bold">TAT VIOLATED</span>
+                            @endif
+                            @if($ticket->reopen_count > 0)
+                            <span class="px-2 py-0.5 rounded-full text-xs bg-pink-100 text-pink-700">Reopened &times;{{ $ticket->reopen_count }}</span>
+                            @endif
+                        @endcan
                     </div>
                     <h2 class="text-lg font-bold text-gray-800">{{ $ticket->subject }}</h2>
                     <p class="text-sm text-gray-500 mt-1">
@@ -63,6 +70,23 @@
                         </button>
                     </form>
                     @endcan
+                    @can('reopen', $ticket)
+                    <form method="POST" action="{{ route('tickets.reopen', $ticket) }}">
+                        @csrf
+                        <button type="submit" class="w-full text-xs px-3 py-1.5 rounded bg-pink-100 text-pink-700 hover:bg-pink-200 font-medium">
+                            Reopen ticket
+                        </button>
+                    </form>
+                    @endcan
+                    @can('close', $ticket)
+                    <form method="POST" action="{{ route('tickets.close', $ticket) }}"
+                          onsubmit="return confirm('Close this ticket? No further updates will be allowed.');">
+                        @csrf
+                        <button type="submit" class="w-full text-xs px-3 py-1.5 rounded bg-gray-700 text-white hover:bg-gray-800 font-medium">
+                            Close ticket
+                        </button>
+                    </form>
+                    @endcan
                 </div>
             </div>
 
@@ -75,6 +99,12 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="font-semibold text-gray-700 mb-4">Activity Timeline</h3>
 
+            @if($ticket->isClosed())
+            <div class="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50 text-center text-sm text-gray-500">
+                This ticket is closed. No further updates can be added.
+            </div>
+            @endif
+
             @can('comment', $ticket)
             <form method="POST" action="{{ route('tickets.update', $ticket) }}" enctype="multipart/form-data" class="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
                 @csrf
@@ -82,22 +112,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <select name="status" class="border border-gray-300 rounded px-3 py-2 text-sm bg-white">
                         <option value="">— keep status —</option>
-                        @foreach(['open','assigned','in_progress','pending_info','resolved','closed'] as $s)
-                        <option value="{{ $s }}">{{ ucfirst(str_replace('_',' ',$s)) }}</option>
+                        @foreach($allowedNextStatuses as $s)
+                            @if($s === 'hold' && !auth()->user()->can('hold', $ticket)) @continue @endif
+                            <option value="{{ $s }}">{{ ucfirst(str_replace('_',' ',$s)) }}</option>
                         @endforeach
-                        @can('hold', $ticket)
-                        <option value="hold">Hold</option>
-                        @endcan
                     </select>
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Attachments (multiple allowed)</label>
-                        <input type="file" name="attachments[]" multiple class="text-sm text-gray-500 w-full">
+                        <label class="block text-xs text-gray-500 mb-1">Attachments (xlsx, xls, docx, doc, pdf, png, jpg)</label>
+                        <input type="file" name="attachments[]" multiple class="text-sm text-gray-500 w-full"
+                               accept=".xlsx,.xls,.docx,.doc,.pdf,.png,.jpg,.jpeg">
                     </div>
                 </div>
                 @else
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Attachments (multiple allowed)</label>
-                    <input type="file" name="attachments[]" multiple class="text-sm text-gray-500">
+                    <label class="block text-xs text-gray-500 mb-1">Attachments (xlsx, xls, docx, doc, pdf, png, jpg)</label>
+                    <input type="file" name="attachments[]" multiple class="text-sm text-gray-500"
+                           accept=".xlsx,.xls,.docx,.doc,.pdf,.png,.jpg,.jpeg">
                 </div>
                 @endcan
                 <textarea name="note" rows="2" placeholder="Add a note, update, or context…"
@@ -142,11 +172,37 @@
                         @if($item->attachments->isNotEmpty())
                         <div class="mt-2 flex flex-wrap gap-2">
                             @foreach($item->attachments as $att)
-                            @if($att->isImage())
+                            @php $kind = $att->previewKind(); @endphp
+                            @if($kind === 'image')
                             <a href="{{ Storage::url($att->file_path) }}" target="_blank" class="block">
                                 <img src="{{ Storage::url($att->file_path) }}"
                                      alt="{{ $att->file_name }}"
-                                     class="h-24 w-24 object-cover rounded border border-gray-200 hover:opacity-90 transition">
+                                     class="h-32 w-32 object-cover rounded border border-gray-200 hover:opacity-90 transition">
+                            </a>
+                            @elseif($kind === 'pdf')
+                            <a href="{{ Storage::url($att->file_path) }}" target="_blank"
+                               class="block w-44 rounded border border-gray-200 overflow-hidden bg-white hover:shadow transition">
+                                <embed src="{{ Storage::url($att->file_path) }}#page=1&toolbar=0&navpanes=0"
+                                       type="application/pdf"
+                                       class="block w-full h-28 pointer-events-none bg-gray-50">
+                                <div class="flex items-center gap-1.5 px-2 py-1.5 text-[11px] text-gray-700 border-t border-gray-100">
+                                    <svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 00-1 1v1H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2V3a1 1 0 00-1-1H9z"/></svg>
+                                    <span class="truncate">{{ $att->file_name }}</span>
+                                </div>
+                            </a>
+                            @elseif($kind === 'excel' || $kind === 'word')
+                            <a href="{{ Storage::url($att->file_path) }}" target="_blank"
+                               class="flex flex-col w-44 rounded border border-gray-200 bg-white hover:shadow transition">
+                                <div class="flex items-center justify-center h-20 {{ $kind === 'excel' ? 'bg-green-50' : 'bg-blue-50' }}">
+                                    @if($kind === 'excel')
+                                    <svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm2.5 4l1.8 3-1.8 3h1.6l1-1.8 1 1.8h1.6l-1.8-3 1.8-3H8.9l-1 1.8-1-1.8H5.3z"/></svg>
+                                    @else
+                                    <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm1.5 4h1.4l.7 4 .8-4h1.4l.8 4 .7-4h1.4l-1.3 6h-1.4l-.7-4-.8 4H6.7L5.5 7z"/></svg>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-1.5 px-2 py-1.5 text-[11px] text-gray-700 border-t border-gray-100">
+                                    <span class="truncate">{{ $att->file_name }}</span>
+                                </div>
                             </a>
                             @else
                             <a href="{{ Storage::url($att->file_path) }}" target="_blank"
@@ -250,21 +306,30 @@
                     </dd>
                 </div>
                 <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd class="text-gray-600 text-right">{{ $ticket->created_at->format('d M Y, H:i') }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">TAT Deadline</dt>
-                    <dd class="{{ $ticket->isOverdue() ? 'text-red-600 font-bold' : 'text-gray-600' }} text-right">{{ $ticket->tat_deadline->format('d M Y, H:i') }}</dd>
-                </div>
-                @if(!$ticket->isOnHold())
-                <div>
-                    <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">TAT Progress</span><span class="text-gray-600">{{ $ticket->tatProgress() }}%</span></div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="h-2 rounded-full {{ $ticket->tatProgress() >= 100 ? 'bg-red-500' : ($ticket->tatProgress() >= 75 ? 'bg-yellow-500' : 'bg-green-500') }}"
-                            style="width: {{ min(100, $ticket->tatProgress()) }}%"></div>
+
+                @can('viewSlaInternals', $ticket)
+                    @php $progress = $ticket->tatProgress(); @endphp
+                    @if($ticket->status_tat_deadline)
+                    <div class="flex justify-between">
+                        <dt class="text-gray-500">SLA Deadline</dt>
+                        <dd class="{{ $ticket->isOverdue() ? 'text-red-600 font-bold' : 'text-gray-600' }} text-right">
+                            {{ $ticket->status_tat_deadline->format('d M Y, H:i') }}
+                        </dd>
                     </div>
-                </div>
-                @endif
-                @if($ticket->hold_total_seconds > 0)
-                <div class="flex justify-between"><dt class="text-gray-500">Hold time</dt><dd class="text-purple-600 font-medium text-right">{{ gmdate('H:i', $ticket->hold_total_seconds) }} h</dd></div>
-                @endif
+                    @endif
+                    @if($progress !== null)
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">SLA Progress ({{ ucfirst(str_replace('_',' ',$ticket->status)) }})</span><span class="text-gray-600">{{ $progress }}%</span></div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="h-2 rounded-full {{ $progress >= 100 ? 'bg-red-500' : ($progress >= 75 ? 'bg-yellow-500' : 'bg-green-500') }}"
+                                style="width: {{ min(100, $progress) }}%"></div>
+                        </div>
+                    </div>
+                    @endif
+                    @if($ticket->reopen_count > 0)
+                    <div class="flex justify-between"><dt class="text-gray-500">Reopens</dt><dd class="text-pink-600 font-medium text-right">{{ $ticket->reopen_count }}</dd></div>
+                    @endif
+                @endcan
             </dl>
         </div>
 
@@ -318,8 +383,9 @@
             @can('attach', $ticket)
             <form method="POST" action="{{ route('tickets.attachment', $ticket) }}" enctype="multipart/form-data" class="mt-3 border-t pt-3">
                 @csrf
-                <label class="block text-xs text-gray-500 mb-1">Add attachment</label>
-                <input type="file" name="attachment" class="text-sm text-gray-500 mb-2 block w-full">
+                <label class="block text-xs text-gray-500 mb-1">Add attachment (xlsx, xls, docx, doc, pdf, png, jpg)</label>
+                <input type="file" name="attachment" class="text-sm text-gray-500 mb-2 block w-full"
+                       accept=".xlsx,.xls,.docx,.doc,.pdf,.png,.jpg,.jpeg">
                 <button type="submit" class="w-full bg-gray-100 text-gray-700 py-2 rounded text-sm hover:bg-gray-200">Upload</button>
             </form>
             @endcan

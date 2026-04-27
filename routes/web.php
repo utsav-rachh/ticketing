@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\TATController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VendorController;
+use App\Http\Controllers\Admin\WorkingHourController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect()->route('dashboard'));
@@ -33,6 +34,8 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::get('/tickets/{ticket}/pdf', [TicketController::class, 'exportPdf'])->name('tickets.pdf');
     Route::resource('tickets', TicketController::class)->only(['index','create','store','show']);
     Route::post('/tickets/{ticket}/update',    [TicketController::class, 'addUpdate'])->name('tickets.update');
+    Route::post('/tickets/{ticket}/reopen',    [TicketController::class, 'reopen'])->name('tickets.reopen');
+    Route::post('/tickets/{ticket}/close',     [TicketController::class, 'close'])->name('tickets.close');
     Route::post('/tickets/{ticket}/assign',    [TicketController::class, 'assign'])->name('tickets.assign');
     Route::post('/tickets/{ticket}/expense',   [TicketController::class, 'addExpense'])->name('tickets.expense');
     Route::post('/tickets/{ticket}/attachment',[TicketController::class, 'addAttachment'])->name('tickets.attachment');
@@ -78,6 +81,8 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::resource('subcategories', SubcategoryController::class)->except(['show']);
         Route::get('/tat', [TATController::class, 'index'])->name('tat.index');
         Route::patch('/tat/{config}', [TATController::class, 'update'])->name('tat.update');
+        Route::get('/working-hours', [WorkingHourController::class, 'index'])->name('working-hours.index');
+        Route::patch('/working-hours', [WorkingHourController::class, 'update'])->name('working-hours.update');
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     });
 });

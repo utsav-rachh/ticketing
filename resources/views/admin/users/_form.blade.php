@@ -60,15 +60,33 @@
             @endforeach
         </select>
     </label>
-    <label class="block">
-        <span class="text-xs font-medium text-gray-500">Auto-route state (resolver only)</span>
-        <select name="assigned_region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-            <option value="">— any —</option>
-            @foreach($regions as $r)
-            <option value="{{ $r->id }}" {{ old('assigned_region_id', $user->assigned_region_id ?? '') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
-            @endforeach
-        </select>
-    </label>
+    @php
+        $selectedRegionIds = collect(old('assigned_region_ids',
+            ($user ?? null)?->exists ? $user->assignedRegions->pluck('id')->all() : []
+        ))->map(fn($v) => (int)$v)->all();
+    @endphp
+    <div class="md:col-span-2">
+        <span class="text-xs font-medium text-gray-500">Auto-route states (resolver only) — pick one or more</span>
+        <details class="mt-1 border border-gray-300 rounded">
+            <summary class="cursor-pointer px-3 py-2 text-sm text-gray-700 select-none">
+                @if(empty($selectedRegionIds))
+                    <span class="text-gray-400">— any state —</span>
+                @else
+                    {{ \App\Models\Region::whereIn('id', $selectedRegionIds)->pluck('name')->join(', ') }}
+                @endif
+            </summary>
+            <div class="px-3 py-2 max-h-56 overflow-auto grid grid-cols-2 gap-1 border-t bg-gray-50">
+                @foreach($regions as $r)
+                <label class="flex items-center gap-2 text-sm py-1">
+                    <input type="checkbox" name="assigned_region_ids[]" value="{{ $r->id }}"
+                           {{ in_array($r->id, $selectedRegionIds, true) ? 'checked' : '' }}>
+                    <span>{{ $r->name }}</span>
+                </label>
+                @endforeach
+            </div>
+        </details>
+        <p class="text-[11px] text-gray-500 mt-1">Leave all unchecked to allow tickets from any state.</p>
+    </div>
     <label class="block">
         <span class="text-xs font-medium text-gray-500">Auto-route support type (resolver only)</span>
         <select name="assigned_support_type" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">

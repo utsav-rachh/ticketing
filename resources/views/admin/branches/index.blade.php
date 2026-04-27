@@ -29,6 +29,11 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                     <a href="{{ route('admin.branches.edit', $b) }}" class="text-brand-600 text-xs hover:underline">Edit</a>
+                    <form method="POST" action="{{ route('admin.branches.destroy', $b) }}" class="inline ml-3"
+                          onsubmit="return confirm('Delete branch &quot;{{ $b->name }}&quot;? Past tickets keep this branch reference; new ones can no longer be raised against it.');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-red-600 text-xs hover:underline">Delete</button>
+                    </form>
                 </td>
             </tr>
             @empty

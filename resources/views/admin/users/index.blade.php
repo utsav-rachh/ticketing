@@ -29,8 +29,13 @@
                 <td class="px-4 py-3 text-xs text-gray-600">{{ $user->resolver_level ? strtoupper($user->resolver_level) : '—' }}</td>
                 <td class="px-4 py-3 text-xs text-gray-600">{{ $user->branch->name ?? '—' }} / {{ $user->region->name ?? '—' }}</td>
                 <td class="px-4 py-3 text-xs text-gray-600">
-                    @if($user->assigned_support_type || $user->assigned_region_id)
-                        {{ $user->assigned_support_type ?: 'any' }} · {{ $user->assignedRegion->name ?? 'any' }}
+                    @php
+                        $regionLabel = $user->assignedRegions->isNotEmpty()
+                            ? $user->assignedRegions->pluck('name')->join(', ')
+                            : ($user->assignedRegion->name ?? 'any');
+                    @endphp
+                    @if($user->assigned_support_type || $user->assignedRegions->isNotEmpty() || $user->assigned_region_id)
+                        {{ $user->assigned_support_type ?: 'any' }} · {{ $regionLabel }}
                     @else — @endif
                 </td>
                 <td class="px-4 py-3 text-xs">

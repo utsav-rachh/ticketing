@@ -6,6 +6,10 @@
     <a href="{{ route('admin.subcategories.create', ['category_id' => $categoryId]) }}" class="text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">+ New issue type</a>
 </div>
 
+@if($errors->has('delete'))
+<div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-4 text-sm">{{ $errors->first('delete') }}</div>
+@endif
+
 <form method="GET" class="bg-white shadow rounded p-4 flex items-end gap-3 mb-4">
     <label class="block flex-1">
         <span class="text-xs font-medium text-gray-500">Filter by category</span>
@@ -43,7 +47,16 @@
                     </span>
                 </td>
                 <td class="px-4 py-3 text-right">
-                    <a href="{{ route('admin.subcategories.edit', $s) }}" class="text-brand-600 text-xs hover:underline">Edit</a>
+                    <div class="inline-flex items-center gap-3">
+                        <a href="{{ route('admin.subcategories.edit', $s) }}" class="text-brand-600 text-xs hover:underline">Edit</a>
+                        <form method="POST" action="{{ route('admin.subcategories.destroy', $s) }}"
+                              onsubmit="return confirm('Delete issue type &quot;{{ $s->name }}&quot;? Existing tickets that reference it will block deletion.')"
+                              class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-600 text-xs hover:underline">Delete</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             @empty

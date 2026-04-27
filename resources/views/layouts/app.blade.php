@@ -12,13 +12,23 @@
     <style>
         /* Collapsible sidebar */
         aside.sidebar { transition: width 180ms ease; }
-        aside.sidebar[data-collapsed="true"]  { width: 4.5rem; }
+        aside.sidebar[data-collapsed="true"]  { width: 5.25rem; }
         aside.sidebar[data-collapsed="false"] { width: 16rem; }
-        aside.sidebar[data-collapsed="true"] .sidebar-label { display: none; }
-        aside.sidebar[data-collapsed="true"] .sidebar-link  { justify-content: center; padding-left: 0; padding-right: 0; }
-        aside.sidebar[data-collapsed="true"] .sidebar-footer { display: none; }
+        /* Collapsed: stack icon + label vertically so names stay visible */
+        aside.sidebar[data-collapsed="true"] .sidebar-link  {
+            flex-direction: column; gap: 2px;
+            justify-content: center; align-items: center;
+            padding: 0.55rem 0.25rem;
+        }
+        aside.sidebar[data-collapsed="true"] .sidebar-label {
+            font-size: 10px; line-height: 1.1; text-align: center;
+            white-space: normal; word-break: break-word;
+        }
         aside.sidebar[data-collapsed="true"] .logo-wrap     { justify-content: center; padding-left: 0; padding-right: 0; }
-        aside.sidebar[data-collapsed="true"] .section-label { display: none; }
+        aside.sidebar[data-collapsed="true"] .logo-text     { display: none; }
+        aside.sidebar[data-collapsed="true"] .section-label { font-size: 9px; padding-left: 0; padding-right: 0; text-align: center; }
+        aside.sidebar[data-collapsed="true"] .footer-block  { padding: 0.5rem 0.25rem; }
+        aside.sidebar[data-collapsed="true"] .footer-detail { display: none; }
         /* Hide scrollbar on sidebar nav (still scrollable via wheel/drag) */
         aside.sidebar nav { scrollbar-width: none; -ms-overflow-style: none; }
         aside.sidebar nav::-webkit-scrollbar { width: 0; height: 0; display: none; }
@@ -30,18 +40,22 @@
     $companyName = config('app.company_name', 'Altum Credo Finance Private Limited');
 @endphp
 <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar (collapsed by default; state persisted in localStorage) -->
-    <aside class="sidebar flex flex-col flex-shrink-0" data-collapsed="true" id="appSidebar"
+    <!-- Sidebar (expanded by default; state persisted in localStorage) -->
+    <aside class="sidebar flex flex-col flex-shrink-0" data-collapsed="false" id="appSidebar"
            style="background: linear-gradient(180deg, #002E52 0%, #0056B3 100%);">
 
-        <div class="logo-wrap h-16 flex items-center px-4 border-b border-white/10">
-            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-9 bg-white rounded-lg p-1 object-contain">
+        <div class="logo-wrap h-20 flex items-center gap-3 px-3 bg-white border-b border-white/10">
+            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-12 object-contain">
+            <div class="logo-text leading-tight">
+                <div class="text-[13px] font-bold" style="color:#002E52;">Altum Credo</div>
+                <div class="text-[10px] text-gray-500">Home Finance</div>
+            </div>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-3">
             @php
                 $navItems = [
-                    ['dashboard',       'Dashboard',   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/>', 'dashboard'],
+                    ['dashboard',       'Dashboard',   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>', 'dashboard'],
                     ['tickets.index',   'Tickets',     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>', 'tickets.*'],
                     ['tickets.create',  'New Ticket',  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>', 'tickets.create'],
                 ];
@@ -97,18 +111,23 @@
         </nav>
 
         <!-- Footer: user, company, attribution, hamburger -->
-        <div class="sidebar-footer border-t border-white/10 p-4">
-            <div class="text-xs text-gray-300 font-medium truncate">{{ $user->name }}</div>
-            <div class="text-[11px] text-gray-400">
-                {{ ucfirst($user->role) }}{{ $user->resolver_level ? ' · '.strtoupper($user->resolver_level) : '' }}
+        <div class="sidebar-footer border-t border-white/10 footer-block p-4">
+            <div class="footer-detail">
+                <div class="text-xs text-gray-300 font-medium truncate">{{ $user->name }}</div>
+                <div class="text-[11px] text-gray-400">
+                    {{ ucfirst($user->role) }}{{ $user->resolver_level ? ' · '.strtoupper($user->resolver_level) : '' }}
+                </div>
             </div>
-            <form method="POST" action="{{ route('logout') }}" class="mt-2">
+            <form method="POST" action="{{ route('logout') }}" class="mt-2 footer-detail">
                 @csrf
                 <button type="submit" class="text-xs text-red-400 hover:text-red-300">Logout</button>
             </form>
-            <div class="mt-3 pt-3 border-t border-white/10 text-[10px] text-gray-400 leading-snug">
-                {{ $companyName }}<br>
-                <span class="text-gold-400/80 font-semibold">Developed by 5P Media</span>
+            <div class="mt-3 pt-3 border-t border-white/10 text-[10px] leading-snug footer-detail">
+                <div class="text-gray-400">{{ $companyName }}</div>
+                <div class="mt-1">
+                    <span class="text-gray-400">Developed by</span>
+                    <span class="font-bold tracking-wide" style="color:#38BDF8;">Cybermedia</span>
+                </div>
             </div>
         </div>
 

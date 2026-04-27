@@ -130,9 +130,82 @@
 
                 <div id="selectionSummary" class="flex flex-wrap gap-2 mb-6"></div>
 
+                @php
+                    $authUser     = auth()->user();
+                    $defaultBranch = $authUser->branch_id;
+                    $defaultRegion = $authUser->region_id ?? optional($branches->firstWhere('id', $defaultBranch))->region_id;
+                @endphp
+
                 <div class="space-y-5">
 
-                    <!-- Custom issue (shown only when subcategory is "Others") -->
+                    {{-- 1. Location: state + branch (auto-selected from the logged-in user, editable) --}}
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Location</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">State <span class="text-red-500">*</span></label>
+                                <select name="region_id" id="regionSelect" required
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400">
+                                    <option value="">— Select state —</option>
+                                    @foreach($regions as $rg)
+                                        <option value="{{ $rg->id }}" {{ old('region_id', $defaultRegion) == $rg->id ? 'selected' : '' }}>{{ $rg->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('region_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Branch <span class="text-red-500">*</span></label>
+                                <select name="branch_id" id="branchSelect" required
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400">
+                                    <option value="">— Select branch —</option>
+                                    @foreach($branches as $br)
+                                        <option value="{{ $br->id }}" data-region="{{ $br->region_id }}"
+                                            {{ old('branch_id', $defaultBranch) == $br->id ? 'selected' : '' }}>
+                                            {{ $br->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('branch_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- 2. Employee details --}}
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Employee details</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Employee ID <span class="text-red-500">*</span></label>
+                                <input type="text" name="employee_contact_employee_id" required maxlength="50"
+                                    value="{{ old('employee_contact_employee_id', $authUser->employee_id) }}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                                @error('employee_contact_employee_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Name <span class="text-red-500">*</span></label>
+                                <input type="text" name="employee_contact_name" required maxlength="150"
+                                    value="{{ old('employee_contact_name', $authUser->name) }}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                                @error('employee_contact_name') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Phone <span class="text-red-500">*</span></label>
+                                <input type="text" name="employee_contact_phone" required maxlength="20"
+                                    value="{{ old('employee_contact_phone', $authUser->phone) }}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                                @error('employee_contact_phone') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Email <span class="text-gray-400">(optional)</span></label>
+                                <input type="email" name="employee_contact_email" maxlength="150"
+                                    value="{{ old('employee_contact_email', $authUser->email) }}"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                                @error('employee_contact_email') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Custom issue (shown only when subcategory is "Others") --}}
                     <div id="customIssueField" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Describe the issue <span class="text-red-500">*</span></label>
                         <textarea name="custom_issue" rows="2"
@@ -141,36 +214,33 @@
                         @error('custom_issue') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    {{-- 3. Subject --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Subject <span class="text-red-500">*</span></label>
-                        <input type="text" name="subject" value="{{ old('subject') }}" required maxlength="500"
+                        <div class="flex items-end justify-between mb-1.5">
+                            <label class="block text-sm font-medium text-gray-700">Subject <span class="text-red-500">*</span></label>
+                            <span id="subjectCounter" class="text-xs text-gray-400">0 / 150</span>
+                        </div>
+                        <input type="text" id="subjectInput" name="subject" value="{{ old('subject') }}" required maxlength="150"
                             class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400"
-                            placeholder="Brief summary of the issue">
+                            placeholder="Brief summary of the issue (max 150 characters)">
+                        <p id="subjectError" class="text-xs text-red-600 mt-1 hidden"></p>
                         @error('subject') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    {{-- 4. Description --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Description <span class="text-gray-400">(optional)</span></label>
-                        <textarea name="description" rows="5"
+                        <div class="flex items-end justify-between mb-1.5">
+                            <label class="block text-sm font-medium text-gray-700">Description <span class="text-red-500">*</span></label>
+                            <span id="descriptionCounter" class="text-xs text-gray-400">0 / 500</span>
+                        </div>
+                        <textarea id="descriptionInput" name="description" rows="5" required maxlength="500"
                             class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400"
-                            placeholder="Steps to reproduce, error messages, any additional context...">{{ old('description') }}</textarea>
+                            placeholder="Steps to reproduce, error messages, any additional context (max 500 characters)...">{{ old('description') }}</textarea>
+                        <p id="descriptionError" class="text-xs text-red-600 mt-1 hidden"></p>
+                        @error('description') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <!-- Branch -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Branch</label>
-                        <select name="branch_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-                            <option value="">— Select branch —</option>
-                            @foreach($branches as $br)
-                                <option value="{{ $br->id }}"
-                                    {{ (old('branch_id', auth()->user()->branch_id) == $br->id) ? 'selected' : '' }}>
-                                    {{ $br->name }} ({{ $br->region->name ?? '—' }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Vendor (infrastructure only) -->
+                    {{-- Vendor (infrastructure only) --}}
                     <div id="vendorField" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Vendor <span class="text-gray-400">(optional)</span></label>
                         <select name="vendor_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
@@ -181,17 +251,7 @@
                         </select>
                     </div>
 
-                    <!-- Raising on behalf (optional contact override) -->
-                    <details class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <summary class="cursor-pointer text-sm font-medium text-gray-700">Contact details (optional — override if raising on behalf)</summary>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                            <input type="text" name="employee_contact_name"  value="{{ old('employee_contact_name', auth()->user()->name) }}"  placeholder="Name"  class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                            <input type="text" name="employee_contact_phone" value="{{ old('employee_contact_phone', auth()->user()->phone) }}" placeholder="Phone" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                            <input type="email" name="employee_contact_email" value="{{ old('employee_contact_email', auth()->user()->email) }}" placeholder="Email" class="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        </div>
-                    </details>
-
-                    <!-- Attachments -->
+                    {{-- 5. Attachments --}}
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Attachments <span class="text-gray-400">(optional, max 10MB each)</span></label>
                         <input type="file" name="attachments[]" multiple
@@ -311,6 +371,67 @@ function buildSummary() {
     document.getElementById('customIssueField').classList.toggle('hidden', !isOthers);
     document.querySelector('textarea[name="custom_issue"]').toggleAttribute('required', isOthers);
 }
+
+// Live character counters for subject + description, with on-screen error past the limit.
+(function () {
+    function bindCounter(inputId, counterId, errorId, max, fieldName) {
+        const input = document.getElementById(inputId);
+        const counter = document.getElementById(counterId);
+        const errorEl = document.getElementById(errorId);
+        if (!input || !counter) return;
+
+        function update() {
+            const len = input.value.length;
+            counter.textContent = `${len} / ${max}`;
+            const over = len >= max;
+            counter.classList.toggle('text-red-600', over);
+            counter.classList.toggle('font-semibold', over);
+            counter.classList.toggle('text-gray-400', !over);
+            if (over) {
+                errorEl.textContent = `${fieldName} cannot exceed ${max} characters.`;
+                errorEl.classList.remove('hidden');
+            } else {
+                errorEl.classList.add('hidden');
+            }
+        }
+        input.addEventListener('input', update);
+        update();
+    }
+    bindCounter('subjectInput',     'subjectCounter',     'subjectError',     150, 'Subject');
+    bindCounter('descriptionInput', 'descriptionCounter', 'descriptionError', 500, 'Description');
+})();
+
+// State <-> branch coupling: filter branches by chosen state, and snap state to a branch's region.
+(function () {
+    const regionSel = document.getElementById('regionSelect');
+    const branchSel = document.getElementById('branchSelect');
+    if (!regionSel || !branchSel) return;
+
+    function filterBranches() {
+        const rid = regionSel.value;
+        let firstVisible = null;
+        Array.from(branchSel.options).forEach(opt => {
+            if (!opt.value) { opt.hidden = false; return; }
+            const match = !rid || opt.dataset.region === rid;
+            opt.hidden = !match;
+            if (match && firstVisible === null) firstVisible = opt;
+        });
+        const cur = branchSel.selectedOptions[0];
+        if (!cur || cur.hidden) {
+            branchSel.value = firstVisible ? firstVisible.value : '';
+        }
+    }
+
+    regionSel.addEventListener('change', filterBranches);
+    branchSel.addEventListener('change', () => {
+        const opt = branchSel.selectedOptions[0];
+        if (opt && opt.dataset.region && regionSel.value !== opt.dataset.region) {
+            regionSel.value = opt.dataset.region;
+            filterBranches();
+        }
+    });
+    filterBranches();
+})();
 
 document.addEventListener('DOMContentLoaded', () => {
     @if(old('support_type'))

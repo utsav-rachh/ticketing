@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\Region;
 use App\Models\Subcategory;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
@@ -50,7 +51,8 @@ class TicketController extends Controller
         $categories = Category::active()->orderBy('support_type')->orderBy('sort_order')->get();
         $vendors    = Vendor::active()->orderBy('name')->get();
         $branches   = Branch::active()->with('region')->orderBy('name')->get();
-        return view('tickets.create', compact('categories','vendors','branches'));
+        $regions    = Region::active()->orderBy('name')->get();
+        return view('tickets.create', compact('categories','vendors','branches','regions'));
     }
 
     public function store(Request $request)
@@ -59,14 +61,16 @@ class TicketController extends Controller
             'support_type'   => 'required|in:application,infrastructure,admin',
             'category_id'    => 'required|exists:categories,id',
             'subcategory_id' => 'required|exists:subcategories,id',
-            'branch_id'      => 'nullable|exists:branches,id',
+            'region_id'      => 'required|exists:regions,id',
+            'branch_id'      => 'required|exists:branches,id',
             'vendor_id'      => 'nullable|exists:vendors,id',
-            'subject'        => 'required|string|max:500',
-            'description'    => 'nullable|string',
+            'subject'        => 'required|string|max:150',
+            'description'    => 'required|string|max:500',
             'custom_issue'   => 'nullable|string|max:500',
-            'employee_contact_name'  => 'nullable|string|max:150',
-            'employee_contact_phone' => 'nullable|string|max:20',
-            'employee_contact_email' => 'nullable|email|max:150',
+            'employee_contact_employee_id' => 'required|string|max:50',
+            'employee_contact_name'        => 'required|string|max:150',
+            'employee_contact_phone'       => 'required|string|max:20',
+            'employee_contact_email'       => 'nullable|email|max:150',
             'attachments.*'  => 'nullable|file|max:10240',
         ]);
 
@@ -99,9 +103,10 @@ class TicketController extends Controller
             'is_red_flag'    => $isManagement,
             'status'         => 'open',
             'created_by'     => $user->id,
-            'employee_contact_name'  => $data['employee_contact_name']  ?? $user->name,
-            'employee_contact_phone' => $data['employee_contact_phone'] ?? $user->phone,
-            'employee_contact_email' => $data['employee_contact_email'] ?? $user->email,
+            'employee_contact_name'        => $data['employee_contact_name']  ?? $user->name,
+            'employee_contact_phone'       => $data['employee_contact_phone'] ?? $user->phone,
+            'employee_contact_email'       => $data['employee_contact_email'] ?? $user->email,
+            'employee_contact_employee_id' => $data['employee_contact_employee_id'] ?? $user->employee_id,
             'tat_hours'      => $tatHours,
             'tat_deadline'   => now()->addHours($tatHours),
         ]);
@@ -403,5 +408,42 @@ class TicketController extends Controller
             new \App\Exports\TicketsExport($request->user(), $filters),
             'tickets-' . now()->format('Ymd-His') . '.xlsx'
         );
+    }
+
+    /**
+     * Render the ticket as a PDF with the full unified timeline.
+     * Available to any user authorised to view the ticket.
+     */
+    public function exportPdf(Ticket $ticket)
+    {
+        $this->authorize('view', $ticket);
+
+        $ticket->load([
+            'creator','category','subcategory','assignee','branch.region','vendor',
+            'activities.user','updates.user','expenses.addedBy','expenses.approvedBy','attachments.uploader',
+        ]);
+
+        $timeline = collect()
+            ->merge($ticket->activities->map(fn ($a) => (object) [
+                'kind' => 'activity', 'at' => $a->created_at, 'user' => $a->user,
+                'type' => $a->action_type, 'text' => $a->description,
+                'old'  => $a->old_value, 'new' => $a->new_value,
+            ]))
+            ->merge($ticket->updates->map(fn ($u) => (object) [
+                'kind' => 'update', 'at' => $u->created_at, 'user' => $u->user,
+                'type' => 'update', 'text' => $u->note,
+                'old'  => $u->status_from, 'new' => $u->status_to,
+            ]))
+            ->sortBy('at')
+            ->values();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('tickets.pdf', [
+            'ticket'   => $ticket,
+            'timeline' => $timeline,
+            'generatedAt' => now(),
+            'generatedBy' => auth()->user(),
+        ])->setPaper('a4');
+
+        return $pdf->download($ticket->ticket_number . '.pdf');
     }
 }

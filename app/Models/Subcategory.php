@@ -3,10 +3,11 @@ namespace App\Models;
 
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subcategory extends Model
 {
-    use Auditable;
+    use Auditable, SoftDeletes;
 
     protected $fillable = ['category_id','name','description','default_priority','is_active','sort_order'];
     protected $casts = ['is_active' => 'boolean'];

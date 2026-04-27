@@ -14,16 +14,12 @@ class DashboardController extends Controller
         $base = Ticket::visibleTo($user);
 
         $stats = [
-            'total'       => (clone $base)->count(),
-            'open'        => (clone $base)->where('status','open')->count(),
-            'assigned'    => (clone $base)->where('status','assigned')->count(),
-            'in_progress' => (clone $base)->where('status','in_progress')->count(),
-            'pending_info'=> (clone $base)->where('status','pending_info')->count(),
-            'hold'        => (clone $base)->where('status','hold')->count(),
-            'resolved'    => (clone $base)->where('status','resolved')->count(),
-            'closed'      => (clone $base)->where('status','closed')->count(),
-            'violated'    => (clone $base)->where('is_tat_violated',true)->whereNotIn('status',['resolved','closed'])->count(),
-            'red_flag'    => (clone $base)->where('is_red_flag',true)->whereNotIn('status',['resolved','closed'])->count(),
+            'total'    => (clone $base)->count(),
+            'open'     => (clone $base)->whereIn('status', ['open','assigned','in_progress','pending_info'])->count(),
+            'hold'     => (clone $base)->where('status','hold')->count(),
+            'resolved' => (clone $base)->whereIn('status',['resolved','closed'])->count(),
+            'violated' => (clone $base)->where('is_tat_violated',true)->whereNotIn('status',['resolved','closed'])->count(),
+            'red_flag' => (clone $base)->where('is_red_flag',true)->whereNotIn('status',['resolved','closed'])->count(),
         ];
 
         // Pending expense approvals — only meaningful for IT Head / admin
@@ -31,12 +27,19 @@ class DashboardController extends Controller
             ? TicketExpense::where('status','pending')->count()
             : null;
 
-        // Tickets grouped by support_type for a small chart (last 30 days)
-        $byType = (clone $base)->where('created_at','>=', now()->subDays(30))
-            ->selectRaw('support_type, count(*) as total')
-            ->groupBy('support_type')->pluck('total','support_type')->all();
+        // Management tickets: red-flagged or raised by management — top of dashboard.
+        $managementTickets = (clone $base)
+            ->where(function ($q) {
+                $q->where('is_red_flag', true)
+                  ->orWhereHas('creator', fn ($c) => $c->where('is_management', true));
+            })
+            ->whereNotIn('status', ['closed'])
+            ->with(['creator','category','subcategory','assignee','branch.region'])
+            ->latest()
+            ->take(10)
+            ->get();
 
-        $recentTickets = (clone $base)->with(['creator','category','assignee','branch.region'])
+        $recentTickets = (clone $base)->with(['creator','category','subcategory','assignee','branch.region'])
             ->latest()->take(10)->get();
 
         $canQuickAssign = $user->isAdmin() || $user->isITHead() || $user->isTL();
@@ -49,6 +52,6 @@ class DashboardController extends Controller
             $assignableUsers = $q->orderBy('name')->get(['id','name','resolver_level','assigned_support_type']);
         }
 
-        return view('dashboard', compact('stats','pendingExpenseCount','byType','recentTickets','canQuickAssign','assignableUsers'));
+        return view('dashboard', compact('stats','pendingExpenseCount','managementTickets','recentTickets','canQuickAssign','assignableUsers'));
     }
 }

@@ -43,7 +43,7 @@ class TicketsExport implements FromQuery, WithHeadings, WithMapping
             'Raised By','Employee ID','Contact Name','Contact Phone','Contact Email',
             'Assignee','Assignee Level','Assigned At',
             'Hold Hours','TAT Hours','TAT Deadline',
-            'Created At','Resolved At','Closed At',
+            'Created At','Aging (days)','Aging','Resolved At','Closed At',
             'Vendor','Expenses Approved (₹)','Expenses Pending (₹)',
             'Last Update Note',
         ];
@@ -81,6 +81,8 @@ class TicketsExport implements FromQuery, WithHeadings, WithMapping
             $t->tat_hours,
             $t->tat_deadline?->format('Y-m-d H:i'),
             $t->created_at?->format('Y-m-d H:i'),
+            $t->aging_days,
+            $t->aging_human,
             $t->resolved_at?->format('Y-m-d H:i'),
             $t->closed_at?->format('Y-m-d H:i'),
             $t->vendor->name ?? '',

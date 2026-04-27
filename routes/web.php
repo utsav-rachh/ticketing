@@ -30,6 +30,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Tickets
     Route::get('/tickets/export', [TicketController::class, 'export'])->name('tickets.export');
+    Route::get('/tickets/{ticket}/pdf', [TicketController::class, 'exportPdf'])->name('tickets.pdf');
     Route::resource('tickets', TicketController::class)->only(['index','create','store','show']);
     Route::post('/tickets/{ticket}/update',    [TicketController::class, 'addUpdate'])->name('tickets.update');
     Route::post('/tickets/{ticket}/assign',    [TicketController::class, 'assign'])->name('tickets.assign');
@@ -72,6 +73,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::resource('regions', RegionController::class)->except(['show']);
         Route::resource('branches', BranchController::class)->except(['show']);
         Route::resource('vendors', VendorController::class)->except(['show']);
+        Route::delete('vendors/{vendor}/attachments/{attachment}', [VendorController::class, 'destroyAttachment'])->name('vendors.attachments.destroy');
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('subcategories', SubcategoryController::class)->except(['show']);
         Route::get('/tat', [TATController::class, 'index'])->name('tat.index');

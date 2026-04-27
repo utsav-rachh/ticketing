@@ -16,13 +16,27 @@ class TicketAssignmentService
     {
         $regionId = $ticket->branch?->region_id;
 
-        // Prefer junior matching support_type + region, tie-break by fewest open tickets
+        // Prefer a junior whose assigned_regions pivot contains this ticket's region.
+        // Falls back to the legacy single assigned_region_id, then to anyone who
+        // has no region restriction. Tie-break by fewest open tickets.
         $junior = User::query()
             ->where('role', 'resolver')
             ->where('resolver_level', 'junior')
             ->where('is_active', true)
             ->where('assigned_support_type', $ticket->support_type)
-            ->when($regionId, fn ($q) => $q->where('assigned_region_id', $regionId))
+            ->when($regionId, function ($q) use ($regionId) {
+                $q->where(function ($w) use ($regionId) {
+                    $w->whereHas('assignedRegions', fn ($r) => $r->where('regions.id', $regionId))
+                      ->orWhere(function ($x) use ($regionId) {
+                          $x->where('assigned_region_id', $regionId)
+                            ->whereDoesntHave('assignedRegions');
+                      })
+                      ->orWhere(function ($x) {
+                          $x->whereNull('assigned_region_id')
+                            ->whereDoesntHave('assignedRegions');
+                      });
+                });
+            })
             ->withCount(['assignedTickets as open_count' => function ($q) {
                 $q->whereNotIn('status', ['resolved','closed']);
             }])

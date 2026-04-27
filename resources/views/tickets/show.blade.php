@@ -47,14 +47,23 @@
                         &bull; {{ ucfirst($ticket->support_type) }}
                     </p>
                 </div>
-                @can('toggleRedFlag', $ticket)
-                <form method="POST" action="{{ route('tickets.redflag', $ticket) }}">
-                    @csrf
-                    <button type="submit" class="text-xs px-3 py-1.5 rounded {{ $ticket->is_red_flag ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                        {{ $ticket->is_red_flag ? 'Clear red flag' : 'Red-flag ticket' }}
-                    </button>
-                </form>
-                @endcan
+                <div class="flex flex-col gap-2">
+                    @if(auth()->user()->canExport())
+                    <a href="{{ route('tickets.pdf', $ticket) }}"
+                       class="text-xs px-3 py-1.5 rounded inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l4 4h4a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                        Export PDF
+                    </a>
+                    @endif
+                    @can('toggleRedFlag', $ticket)
+                    <form method="POST" action="{{ route('tickets.redflag', $ticket) }}">
+                        @csrf
+                        <button type="submit" class="w-full text-xs px-3 py-1.5 rounded {{ $ticket->is_red_flag ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            {{ $ticket->is_red_flag ? 'Clear red flag' : 'Red-flag ticket' }}
+                        </button>
+                    </form>
+                    @endcan
+                </div>
             </div>
 
             @if($ticket->description)
@@ -227,7 +236,19 @@
                 @error('vendor_reference') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                 @endcan
                 @endif
-                <div class="flex justify-between"><dt class="text-gray-500">Contact</dt><dd class="text-right text-xs">{{ $ticket->employee_contact_name }}<br><span class="text-gray-500">{{ $ticket->employee_contact_phone }}</span></dd></div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Contact</dt>
+                    <dd class="text-right text-xs">
+                        {{ $ticket->employee_contact_name }}
+                        @if($ticket->employee_contact_employee_id)
+                            <br><span class="text-gray-500">EMP: {{ $ticket->employee_contact_employee_id }}</span>
+                        @endif
+                        <br><span class="text-gray-500">{{ $ticket->employee_contact_phone }}</span>
+                        @if($ticket->employee_contact_email)
+                            <br><span class="text-gray-400">{{ $ticket->employee_contact_email }}</span>
+                        @endif
+                    </dd>
+                </div>
                 <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd class="text-gray-600 text-right">{{ $ticket->created_at->format('d M Y, H:i') }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">TAT Deadline</dt>
                     <dd class="{{ $ticket->isOverdue() ? 'text-red-600 font-bold' : 'text-gray-600' }} text-right">{{ $ticket->tat_deadline->format('d M Y, H:i') }}</dd>

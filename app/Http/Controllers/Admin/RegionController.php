@@ -31,8 +31,13 @@ class RegionController extends Controller
 
     public function destroy(Region $region)
     {
+        // Soft-delete: removes from active dropdowns but past tickets/branches
+        // still resolve the region name via withTrashed() relations.
         $region->update(['is_active' => false]);
-        return back()->with('success', 'Region deactivated.');
+        $region->branches()->update(['is_active' => false]);
+        $region->branches()->delete();
+        $region->delete();
+        return redirect()->route('admin.regions.index')->with('success', 'State deleted.');
     }
 
     private function validated(Request $request, ?int $id = null): array

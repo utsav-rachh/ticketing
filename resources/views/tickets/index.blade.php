@@ -94,21 +94,26 @@
                 <th class="px-4 py-3 text-left">Branch</th>
                 <th class="px-4 py-3 text-left">Assigned To</th>
                 <th class="px-4 py-3 text-left">TAT</th>
+                <th class="px-4 py-3 text-left">Aging</th>
                 <th class="px-4 py-3 text-left">Created</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
             @forelse($tickets as $ticket)
-            <tr class="hover:bg-gray-50
-                {{ $ticket->is_red_flag ? 'bg-red-50/50' : '' }}
-                {{ $ticket->is_tat_violated && !in_array($ticket->status,['resolved','closed']) ? 'bg-red-50' : '' }}">
+            @php
+                $isViolated = $ticket->is_tat_violated && !in_array($ticket->status, ['resolved','closed']);
+            @endphp
+            <tr class="{{ $isViolated ? 'bg-red-100 hover:bg-red-200 border-l-4 border-red-500' : ($ticket->is_red_flag ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50') }}">
                 <td class="px-4 py-3">
-                    <a href="{{ route('tickets.show', $ticket) }}" class="text-brand-500 hover:underline font-mono text-xs">
-                        @if($ticket->is_red_flag)<span class="text-red-600 mr-1" title="Red-flagged">●</span>@endif
+                    <a href="{{ route('tickets.show', $ticket) }}" class="text-brand-500 hover:underline font-mono text-xs inline-flex items-center gap-1">
+                        @if($ticket->is_red_flag)
+                        <svg class="w-3.5 h-3.5 text-red-600" fill="currentColor" viewBox="0 0 20 20" title="Red-flagged"><path d="M3 4a1 1 0 011-1h4.586A1 1 0 019.293 3.293L10 4h5a1 1 0 011 1v7a1 1 0 01-1 1h-5.586a1 1 0 01-.707-.293L9 12H4v5a1 1 0 11-2 0V4z"/></svg>
+                        @endif
                         {{ $ticket->ticket_number }}
                     </a>
-                    @if($ticket->is_tat_violated && !in_array($ticket->status,['resolved','closed']))
-                        <span class="ml-1 text-xs text-red-600 font-bold">TAT!</span>
+                    <div class="text-[11px] text-gray-400 mt-0.5">{{ $ticket->created_at?->format('d M Y') }}</div>
+                    @if($isViolated)
+                        <span class="mt-1 inline-block bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">TAT VIOLATED</span>
                     @endif
                 </td>
                 <td class="px-4 py-3 max-w-xs truncate">{{ $ticket->subject }}</td>
@@ -125,10 +130,13 @@
                 <td class="px-4 py-3 text-xs text-gray-600">{{ $ticket->branch->name ?? '—' }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ $ticket->assignee->name ?? 'Unassigned' }}</td>
                 <td class="px-4 py-3 text-xs text-gray-400">{{ $ticket->tat_deadline?->format('d M, H:i') }}</td>
+                <td class="px-4 py-3 text-xs">
+                    <span class="font-semibold text-gray-700">{{ $ticket->aging_human }}</span>
+                </td>
                 <td class="px-4 py-3 text-xs text-gray-400">{{ $ticket->created_at->diffForHumans() }}</td>
             </tr>
             @empty
-            <tr><td colspan="9" class="px-6 py-8 text-center text-gray-400">No tickets found.</td></tr>
+            <tr><td colspan="10" class="px-6 py-8 text-center text-gray-400">No tickets found.</td></tr>
             @endforelse
         </tbody>
     </table>

@@ -32,6 +32,7 @@ class User extends Authenticatable
     public function branch()          { return $this->belongsTo(Branch::class); }
     public function region()          { return $this->belongsTo(Region::class); }
     public function assignedRegion()  { return $this->belongsTo(Region::class, 'assigned_region_id'); }
+    public function assignedRegions() { return $this->belongsToMany(Region::class, 'resolver_regions'); }
 
     public function isEmployee(): bool   { return $this->role === 'employee'; }
     public function isResolver(): bool   { return $this->role === 'resolver'; }

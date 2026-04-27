@@ -12,7 +12,7 @@ class Ticket extends Model
         'ticket_number','support_type','category_id','subcategory_id','branch_id','vendor_id','vendor_reference',
         'subject','description','custom_issue','priority','status','is_red_flag',
         'created_by','assigned_to','assigned_by',
-        'employee_contact_name','employee_contact_phone','employee_contact_email',
+        'employee_contact_name','employee_contact_phone','employee_contact_email','employee_contact_employee_id',
         'assigned_at','hold_started_at','hold_total_seconds',
         'resolved_at','closed_at','tat_hours','tat_deadline','is_tat_violated','tat_notified_at',
     ];
@@ -32,10 +32,10 @@ class Ticket extends Model
     public function creator()    { return $this->belongsTo(User::class, 'created_by'); }
     public function assignee()   { return $this->belongsTo(User::class, 'assigned_to'); }
     public function assigner()   { return $this->belongsTo(User::class, 'assigned_by'); }
-    public function category()   { return $this->belongsTo(Category::class); }
-    public function subcategory(){ return $this->belongsTo(Subcategory::class); }
-    public function branch()     { return $this->belongsTo(Branch::class); }
-    public function vendor()     { return $this->belongsTo(Vendor::class); }
+    public function category()   { return $this->belongsTo(Category::class)->withTrashed(); }
+    public function subcategory(){ return $this->belongsTo(Subcategory::class)->withTrashed(); }
+    public function branch()     { return $this->belongsTo(Branch::class)->withTrashed(); }
+    public function vendor()     { return $this->belongsTo(Vendor::class)->withTrashed(); }
     public function activities() { return $this->hasMany(TicketActivity::class)->orderBy('created_at'); }
     public function updates()    { return $this->hasMany(TicketUpdate::class)->orderBy('created_at'); }
     public function expenses()   { return $this->hasMany(TicketExpense::class); }
@@ -106,9 +106,31 @@ class Ticket extends Model
 
     public static function generateTicketNumber(): string
     {
-        $date  = now()->format('Ymd');
-        $count = static::whereDate('created_at', today())->count() + 1;
-        return sprintf('TKT-%s-%03d', $date, $count);
+        // Sequential global counter: ACHFPL-0001, ACHFPL-0002, ...
+        // withTrashed so soft-deleted tickets don't reuse numbers.
+        $count = static::withTrashed()->count() + 1;
+        return sprintf('ACHFPL-%04d', $count);
+    }
+
+    /**
+     * Whole days since the ticket was raised (used by list view + Excel export).
+     */
+    public function getAgingDaysAttribute(): int
+    {
+        if (!$this->created_at) return 0;
+        return (int) $this->created_at->diffInDays(now());
+    }
+
+    /**
+     * Compact human-friendly aging string: "12d 3h", "4h 21m", "12m".
+     */
+    public function getAgingHumanAttribute(): string
+    {
+        if (!$this->created_at) return '—';
+        $diff = $this->created_at->diff(now());
+        if ($diff->days >= 1)   return $diff->days . 'd ' . $diff->h . 'h';
+        if ($diff->h    >= 1)   return $diff->h . 'h ' . $diff->i . 'm';
+        return max(1, $diff->i) . 'm';
     }
 
     public function getPriorityColorAttribute(): string

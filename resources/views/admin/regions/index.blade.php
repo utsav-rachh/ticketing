@@ -29,6 +29,11 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                     <a href="{{ route('admin.regions.edit', $r) }}" class="text-brand-600 text-xs hover:underline">Edit</a>
+                    <form method="POST" action="{{ route('admin.regions.destroy', $r) }}" class="inline ml-3"
+                          onsubmit="return confirm('Delete state &quot;{{ $r->name }}&quot;? Past tickets keep this state name; new ones can no longer be assigned to it.');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-red-600 text-xs hover:underline">Delete</button>
+                    </form>
                 </td>
             </tr>
             @empty

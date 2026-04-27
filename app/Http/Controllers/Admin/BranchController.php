@@ -40,8 +40,11 @@ class BranchController extends Controller
 
     public function destroy(Branch $branch)
     {
+        // Soft-delete: branch disappears from active dropdowns; old tickets keep
+        // their branch_id so the historical reference still renders.
         $branch->update(['is_active' => false]);
-        return back()->with('success', 'Branch deactivated.');
+        $branch->delete();
+        return redirect()->route('admin.branches.index')->with('success', 'Branch deleted.');
     }
 
     private function validated(Request $request, ?int $id = null): array

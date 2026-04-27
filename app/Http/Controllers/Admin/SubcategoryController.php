@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Subcategory;
+use App\Models\Ticket;
 use Illuminate\Http\Request;
 
 class SubcategoryController extends Controller
@@ -43,13 +44,26 @@ class SubcategoryController extends Controller
         return redirect()->route('admin.subcategories.index')->with('success', 'Issue type updated.');
     }
 
+    /**
+     * Delete (soft) an issue type. Refuses if any past ticket references it.
+     * "Others" is special-cased — it must exist on every category.
+     */
     public function destroy(Subcategory $subcategory)
     {
         if (strcasecmp($subcategory->name, 'Others') === 0) {
-            return back()->withErrors(['name' => 'The "Others" row is required on every category and cannot be deleted.']);
+            return back()->withErrors(['delete' => 'The "Others" row is required on every category and cannot be deleted. Mark it Inactive instead.']);
         }
-        $subcategory->update(['is_active' => false]);
-        return back()->with('success', 'Issue type deactivated.');
+
+        $ticketCount = Ticket::withTrashed()->where('subcategory_id', $subcategory->id)->count();
+        if ($ticketCount > 0) {
+            return back()->withErrors([
+                'delete' => "Cannot delete \"{$subcategory->name}\" — it is referenced by {$ticketCount} existing ticket(s). "
+                          . "Mark it as Inactive instead so it disappears from new ticket dropdowns while keeping past data intact.",
+            ]);
+        }
+
+        $subcategory->delete();
+        return back()->with('success', "Issue type \"{$subcategory->name}\" deleted.");
     }
 
     private function validated(Request $request): array

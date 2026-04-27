@@ -5,6 +5,11 @@
     <h2 class="text-xl font-bold text-gray-700">Categories</h2>
     <a href="{{ route('admin.categories.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">+ New category</a>
 </div>
+
+@if($errors->has('delete'))
+<div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-4 text-sm">{{ $errors->first('delete') }}</div>
+@endif
+
 <div class="grid grid-cols-1 gap-4">
     @foreach($categories->groupBy('support_type') as $type => $cats)
     <div class="bg-white rounded-lg shadow p-6">
@@ -18,6 +23,13 @@
                         <a href="{{ route('admin.subcategories.index', ['category_id' => $cat->id]) }}" class="text-xs text-brand-600 hover:underline">Manage issues</a>
                         <a href="{{ route('admin.categories.edit', $cat) }}" class="text-xs text-brand-600 hover:underline">Edit</a>
                         <span class="{{ $cat->is_active ? 'text-green-600' : 'text-red-500' }} text-xs">{{ $cat->is_active ? 'Active' : 'Inactive' }}</span>
+                        <form method="POST" action="{{ route('admin.categories.destroy', $cat) }}"
+                              onsubmit="return confirm('Delete category &quot;{{ $cat->name }}&quot;? Past tickets that reference this category will block deletion. This cannot be undone for new tickets.')"
+                              class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-xs text-red-600 hover:underline">Delete</button>
+                        </form>
                     </span>
                 </summary>
                 <div class="mt-2 pl-3 text-sm text-gray-600 grid grid-cols-3 gap-1">

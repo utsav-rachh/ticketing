@@ -9,6 +9,7 @@
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
+                <th class="px-4 py-3 text-left">Code</th>
                 <th class="px-4 py-3 text-left">Name</th>
                 <th class="px-4 py-3 text-left">Contact</th>
                 <th class="px-4 py-3 text-left">Phone</th>
@@ -20,6 +21,7 @@
         <tbody class="divide-y divide-gray-100">
             @forelse($vendors as $v)
             <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ $v->vendor_code ?: '—' }}</td>
                 <td class="px-4 py-3 font-medium text-gray-800">{{ $v->name }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ $v->contact_person ?: '—' }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ $v->phone ?: '—' }}</td>
@@ -31,10 +33,15 @@
                 </td>
                 <td class="px-4 py-3 text-right">
                     <a href="{{ route('admin.vendors.edit', $v) }}" class="text-brand-600 text-xs hover:underline">Edit</a>
+                    <form method="POST" action="{{ route('admin.vendors.destroy', $v) }}" class="inline ml-3"
+                          onsubmit="return confirm('Delete vendor &quot;{{ $v->name }}&quot;? Past tickets keep this vendor reference.');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-red-600 text-xs hover:underline">Delete</button>
+                    </form>
                 </td>
             </tr>
             @empty
-            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No vendors yet.</td></tr>
+            <tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">No vendors yet.</td></tr>
             @endforelse
         </tbody>
     </table>

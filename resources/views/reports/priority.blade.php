@@ -2,8 +2,14 @@
 @section('title', 'Priority Distribution Report')
 @section('content')
 <a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
-<h2 class="text-xl font-bold text-gray-700 mb-4">Priority Distribution Report</h2>
-<form method="GET" class="bg-white shadow rounded p-4 flex items-end gap-3 mb-6">
+
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-bold text-gray-700">Priority Distribution</h2>
+    <a href="{{ route('reports.priority', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
+       class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600">Export Excel</a>
+</div>
+
+<form method="GET" class="bg-white shadow rounded p-3 flex items-end gap-3 mb-6">
     <label class="block flex-1 max-w-xs">
         <span class="text-xs font-medium text-gray-500">State</span>
         <select name="region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
@@ -13,8 +19,10 @@
             @endforeach
         </select>
     </label>
-    <button class="text-white px-4 py-2 rounded text-sm" style="background:#0056B3;">Filter</button>
+    <button class="text-white px-4 py-2 rounded text-sm" style="background:#0056B3;">Apply</button>
+    <a href="{{ route('reports.priority') }}" class="bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm">Clear</a>
 </form>
+
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
@@ -25,7 +33,6 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-            @php $total = $data->sum('total'); @endphp
             @forelse($data as $row)
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-3">
@@ -36,14 +43,7 @@
                 </td>
                 <td class="px-6 py-3 text-right font-semibold">{{ $row->total }}</td>
                 <td class="px-6 py-3 text-right text-gray-500">
-                    @if($total > 0)
-                        {{ round($row->total / $total * 100, 1) }}%
-                        <div class="w-32 bg-gray-200 rounded-full h-1.5 mt-1 ml-auto">
-                            <div class="h-1.5 rounded-full bg-brand-500" style="width: {{ round($row->total / $total * 100) }}%"></div>
-                        </div>
-                    @else
-                        0%
-                    @endif
+                    {{ $total > 0 ? round($row->total / $total * 100, 1) : 0 }}%
                 </td>
             </tr>
             @empty

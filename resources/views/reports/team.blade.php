@@ -2,7 +2,13 @@
 @section('title', 'Team Performance Report')
 @section('content')
 <a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
-<h2 class="text-xl font-bold text-gray-700 mb-6">Team Performance</h2>
+
+<div class="flex items-center justify-between mb-6">
+    <h2 class="text-xl font-bold text-gray-700">Team Performance</h2>
+    <a href="{{ route('reports.team', ['format' => 'xlsx']) }}"
+       class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600">Export Excel</a>
+</div>
+
 <div class="bg-white rounded-lg shadow overflow-x-auto">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">

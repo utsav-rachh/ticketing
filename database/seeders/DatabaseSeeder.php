@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             WorkingHoursSeeder::class,
             TATConfigurationSeeder::class,
             UserSeeder::class,
+            DemoTicketSeeder::class,
         ]);
     }
 }

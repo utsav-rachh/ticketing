@@ -68,6 +68,7 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/tat', [ReportController::class, 'tatReport'])->name('reports.tat');
         Route::get('/expenses', [ReportController::class, 'expenseReport'])->name('reports.expenses');
         Route::get('/team-performance', [ReportController::class, 'teamReport'])->name('reports.team');
+        Route::get('/aging', [ReportController::class, 'agingReport'])->name('reports.aging');
     });
 
     // Admin (admin role only)

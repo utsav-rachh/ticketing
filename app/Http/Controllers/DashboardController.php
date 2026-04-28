@@ -39,7 +39,12 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        $recentTickets = (clone $base)->with(['creator','category','subcategory','assignee','branch.region'])
+        // Recent tickets: exclude any IDs already shown in the management block,
+        // so a ticket never appears twice on the dashboard.
+        $managementIds = $managementTickets->pluck('id')->all();
+        $recentTickets = (clone $base)
+            ->when(!empty($managementIds), fn ($q) => $q->whereNotIn('id', $managementIds))
+            ->with(['creator','category','subcategory','assignee','branch.region'])
             ->latest()->take(10)->get();
 
         $canQuickAssign = $user->isAdmin() || $user->isITHead() || $user->isTL();

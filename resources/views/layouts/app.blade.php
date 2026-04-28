@@ -24,8 +24,7 @@
             font-size: 10px; line-height: 1.1; text-align: center;
             white-space: normal; word-break: break-word;
         }
-        aside.sidebar[data-collapsed="true"] .logo-wrap     { justify-content: center; padding-left: 0; padding-right: 0; }
-        aside.sidebar[data-collapsed="true"] .logo-text     { display: none; }
+        aside.sidebar[data-collapsed="true"] .logo-wrap     { padding-left: 0; padding-right: 0; }
         aside.sidebar[data-collapsed="true"] .section-label { font-size: 9px; padding-left: 0; padding-right: 0; text-align: center; }
         aside.sidebar[data-collapsed="true"] .footer-block  { padding: 0.5rem 0.25rem; }
         aside.sidebar[data-collapsed="true"] .footer-detail { display: none; }
@@ -44,12 +43,8 @@
     <aside class="sidebar flex flex-col flex-shrink-0" data-collapsed="false" id="appSidebar"
            style="background: linear-gradient(180deg, #002E52 0%, #0056B3 100%);">
 
-        <div class="logo-wrap h-20 flex items-center gap-3 px-3 bg-white border-b border-white/10">
+        <div class="logo-wrap h-20 flex items-center justify-center px-3 bg-white border-b border-gray-200">
             <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-12 object-contain">
-            <div class="logo-text leading-tight">
-                <div class="text-[13px] font-bold" style="color:#002E52;">Altum Credo</div>
-                <div class="text-[10px] text-gray-500">Home Finance</div>
-            </div>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-3">
@@ -127,7 +122,7 @@
                 <div class="text-gray-400">{{ $companyName }}</div>
                 <div class="mt-1">
                     <span class="text-gray-400">Developed by</span>
-                    <span class="font-bold tracking-wide" style="color:#38BDF8;">Cybermedia</span>
+                    <span class="font-bold tracking-wide" style="color:#38BDF8;">5P Media</span>
                 </div>
             </div>
         </div>
@@ -144,7 +139,7 @@
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b flex items-center justify-between px-6 flex-shrink-0">
+        <header class="h-16 bg-white border-b border-gray-200 border-t-2 border-t-brand-500 flex items-center justify-between px-6 flex-shrink-0">
             <h1 class="text-lg font-semibold text-gray-800">@yield('title', 'Dashboard')</h1>
             <div class="flex items-center gap-4">
                 <a href="{{ route('notifications.index') }}" class="relative text-gray-500 hover:text-brand-500" id="notifBell">

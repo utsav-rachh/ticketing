@@ -6,388 +6,634 @@ use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
+use App\Models\TicketAttachment;
 use App\Models\TicketExpense;
 use App\Models\TicketUpdate;
 use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Re-creates the demo ticket dataset against the current org structure
+ * (Altum Credo states/branches/users from BranchSeeder + UserSeeder).
+ *
+ * Idempotent: clears existing tickets and re-seeds a curated set.
+ */
 class DemoTicketSeeder extends Seeder
 {
     public function run(): void
     {
+        // ── Resolve the user roster (created by UserSeeder) ──────────────
         $admin    = User::where('email', 'admin@altumcredo.com')->first();
-        $itHead   = User::where('email', 'yogesh@altumcredo.com')->first();
-        $appTL    = User::where('email', 'prashant@altumcredo.com')->first();
-        $appJr    = User::where('email', 'sayali@altumcredo.com')->first();
-        $infraTL  = User::where('email', 'vishal@altumcredo.com')->first();
-        $infraJr  = User::where('email', 'utsav@altumcredo.com')->first();
-        $adminTL  = User::where('email', 'tl.adminhr@altumcredo.com')->first();
-        $adminJr  = User::where('email', 'junior.adminhr@altumcredo.com')->first();
-        $md       = User::where('email', 'md@altumcredo.com')->first();
+        $yogesh   = User::where('email', 'yogesh@altumcredo.com')->first();             // IT Head
+        $prashant = User::where('email', 'prashant.d@altumcredo.com')->first();         // App TL
+        $vishalS  = User::where('email', 'vishal@altumcredo.com')->first();             // Infra TL
+        $sayli    = User::where('email', 'sayali@altumcredo.com')->first();             // App Jr
+        $omkar    = User::where('email', 'omkar.jadhav@altumcredo.com')->first();       // App Jr
+        $kalyani  = User::where('email', 'kalyani.g@altumcredo.com')->first();          // App Jr
+        $vishalG  = User::where('email', 'it.trainee@altumcredo.com')->first();         // Infra Jr
+        $kumar    = User::where('email', 'kumar@altumcredo.com')->first();              // Infra Jr
 
-        if (!$admin || !$appTL || !$infraTL) {
+        // Management creators (CEO Office, Sales)
+        $hari      = User::where('email', 'hari@altumcredo.com')->first();
+        $pankaj    = User::where('email', 'pankaj@altumcredo.com')->first();
+        $sandeep   = User::where('email', 'sandeep.upadhyay@altumcredo.com')->first();
+        $sanjay    = User::where('email', 'sanjay@altumcredo.com')->first();
+        $sarveish  = User::where('email', 'sarveish@altumcredo.com')->first();
+        $vikrant   = User::where('email', 'vikrant@altumcredo.com')->first();
+        $vivek     = User::where('email', 'vivek@altumcredo.com')->first();
+        $ravindra  = User::where('email', 'ravindra.n@altumcredo.com')->first();
+        $ujjwal    = User::where('email', 'ujjwal@altumcredo.com')->first();
+
+        if (!$admin || !$prashant || !$vishalS) {
             $this->command?->warn('DemoTicketSeeder: required users missing, run UserSeeder first.');
             return;
         }
 
-        // Branch employees (creators from across the country)
-        $ravi    = User::where('email', 'ravi.mum@altumcredo.com')->first();
-        $neha    = User::where('email', 'neha.pne@altumcredo.com')->first();
-        $arjun   = User::where('email', 'arjun.del@altumcredo.com')->first();
-        $simran  = User::where('email', 'simran.chd@altumcredo.com')->first();
-        $karthik = User::where('email', 'karthik.blr@altumcredo.com')->first();
-        $priya   = User::where('email', 'priya.chn@altumcredo.com')->first();
-        $anindya = User::where('email', 'anindya.kol@altumcredo.com')->first();
-        $manoj   = User::where('email', 'manoj.bhu@altumcredo.com')->first();
+        // ── Branches (mapped to current BranchSeeder codes) ──────────────
+        $puneCorp     = Branch::where('code', 'BR-MH-01')->first();   // Pune Corporate Office
+        $puneRO       = Branch::where('code', 'BR-MH-02')->first();   // Pune RO
+        $kolhapur     = Branch::where('code', 'BR-MH-04')->first();
+        $nashik       = Branch::where('code', 'BR-MH-05')->first();
+        $nagpur       = Branch::where('code', 'BR-MH-06')->first();
+        $bangaloreRO  = Branch::where('code', 'BR-KA-01')->first();
+        $mysore       = Branch::where('code', 'BR-KA-02')->first();
+        $hassan       = Branch::where('code', 'BR-KA-07')->first();
+        $coimbatore   = Branch::where('code', 'BR-TN-01')->first();
+        $madurai      = Branch::where('code', 'BR-TN-02')->first();
+        $jaipurRO     = Branch::where('code', 'BR-RJ-01')->first();
+        $udaipur      = Branch::where('code', 'BR-RJ-08')->first();
+        $vijaywadaRO  = Branch::where('code', 'BR-AP-01')->first();
+        $vizag        = Branch::where('code', 'BR-AP-05')->first();
+        $hyderabadRO  = Branch::where('code', 'BR-TG-01')->first();
+        $warangal     = Branch::where('code', 'BR-TG-11')->first();
+        $anyBranch    = $puneCorp ?: Branch::first();
 
-        $mumbaiBranch = Branch::where('code', 'BR-MUM-01')->first();
-        $puneBranch   = Branch::where('code', 'BR-PNE-01')->first();
-        $delhiBranch  = Branch::where('code', 'BR-DEL-01')->first();
-        $chdBranch    = Branch::where('code', 'BR-CHD-01')->first();
-        $blrBranch    = Branch::where('code', 'BR-BLR-01')->first();
-        $chnBranch    = Branch::where('code', 'BR-CHN-01')->first();
-        $kolBranch    = Branch::where('code', 'BR-KOL-01')->first();
-        $bhuBranch    = Branch::where('code', 'BR-BHU-01')->first();
-        $anyBranch    = $mumbaiBranch ?: Branch::first();
-        $dellVendor   = Vendor::where('name', 'like', '%Dell%')->first() ?: Vendor::first();
-        $ciscoVendor  = Vendor::where('name', 'like', '%Cisco%')->first() ?: Vendor::skip(1)->first() ?: $dellVendor;
+        // ── Vendors ──────────────────────────────────────────────────────
+        $dellVendor   = Vendor::where('name', 'like', '%Dell%')->first();
+        $hpVendor     = Vendor::where('name', 'like', '%HP%')->first();
+        $airtelVendor = Vendor::where('name', 'like', '%Airtel%')->first();
 
-        $appCat    = Category::where('support_type', 'application')->first();
-        $infraCat  = Category::where('support_type', 'infrastructure')->first();
-        $adminCat  = Category::where('support_type', 'admin')->first();
-        $appSub    = Subcategory::where('category_id', $appCat?->id)->first();
-        $infraSub  = Subcategory::where('category_id', $infraCat?->id)->first();
-        $adminSub  = Subcategory::where('category_id', $adminCat?->id)->first();
+        // ── Categories / subcategories ───────────────────────────────────
+        // Categories are unique by support_type+name; we look up specific issue types
+        // so demo tickets actually carry meaningful classifications.
+        $appCat   = Category::where('support_type', 'application')->where('name', 'Rapid Sales')->first();
+        $appLMS   = Category::where('support_type', 'application')->where('name', 'LMS')->first();
+        $appCredit= Category::where('support_type', 'application')->where('name', 'Credit')->first();
+        $infraCat = Category::where('support_type', 'infrastructure')->where('name', 'Server')->first();
+        $infraNet = Category::where('support_type', 'infrastructure')->where('name', 'Internet / Network')->first();
+        $infraLap = Category::where('support_type', 'infrastructure')->where('name', 'Laptop')->first();
+        $infraPrn = Category::where('support_type', 'infrastructure')->where('name', 'Printer')->first();
+        $adminFac = Category::where('support_type', 'admin')->where('name', 'Facility Management')->first();
+        $adminHR  = Category::where('support_type', 'admin')->where('name', 'HR Queries')->first();
+        $adminSup = Category::where('support_type', 'admin')->where('name', 'Office Supplies')->first();
 
-        if (!$appCat || !$infraCat || !$adminCat) {
+        if (!$appCat || !$infraCat || !$adminFac) {
             $this->command?->warn('DemoTicketSeeder: categories missing, run CategorySeeder first.');
             return;
         }
 
+        $sub = function (?Category $cat, string $name) {
+            if (!$cat) return null;
+            return Subcategory::where('category_id', $cat->id)->where('name', $name)->first()
+                ?: Subcategory::where('category_id', $cat->id)->first();
+        };
+
+        // ── Wipe existing demo + ticket children so reseed is clean ──────
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        TicketAttachment::query()->delete();
+        TicketExpense::query()->delete();
+        TicketUpdate::query()->delete();
+        TicketActivity::query()->delete();
+        Ticket::withTrashed()->forceDelete();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Counter for ticket numbers — start at 1 to match Ticket::generateTicketNumber()
+        $seq = 0;
+        $next = function () use (&$seq) {
+            $seq++;
+            return sprintf('ACHFPL-%04d', $seq);
+        };
+
+        $now = Carbon::now();
+
         $tickets = [
-            // 1. Open application ticket, unassigned — Mumbai Ops
+            // 1. Open routine — Sayli's region (Karnataka, Mysore branch)
             [
-                'ticket_number' => 'TKT-DEMO-001',
+                'ticket_number' => $next(),
                 'support_type'  => 'application',
-                'category_id'   => $appCat->id,
-                'subcategory_id'=> $appSub?->id,
-                'branch_id'     => $mumbaiBranch?->id ?? $anyBranch?->id,
-                'subject'       => 'LOS application not loading',
-                'description'   => 'Loan origination system shows a blank screen after login. Started this morning, tried on two browsers.',
+                'category'      => $appCat,
+                'subcategory'   => $sub($appCat, 'Unable to login'),
+                'branch'        => $mysore,
+                'subject'       => 'Rapid Sales — unable to login this morning',
+                'description'   => 'Login screen returns "invalid credentials" for sales team in Mysore branch since 8:30 AM.',
                 'priority'      => 'high',
                 'status'        => 'open',
-                'created_by'    => ($ravi?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subHours(1),
+                'creator'       => $hari ?? $admin,
+                'created_at'    => $now->copy()->subHours(1),
                 'tat_hours'     => 4,
                 'activities'    => [
-                    ['action_type' => 'created', 'description' => 'Ticket created by ' . ($ravi?->name ?? $md->name), 'user' => $ravi ?? $md, 'at' => Carbon::now()->subHours(1)],
+                    ['action_type' => 'created', 'who' => 'creator', 'at' => $now->copy()->subHours(1)],
                 ],
             ],
 
-            // 2. Assigned application ticket — Pune Sales
+            // 2. Assigned application ticket — Coimbatore (Tamil Nadu)
             [
-                'ticket_number' => 'TKT-DEMO-002',
+                'ticket_number' => $next(),
                 'support_type'  => 'application',
-                'category_id'   => $appCat->id,
-                'subcategory_id'=> $appSub?->id,
-                'branch_id'     => $puneBranch?->id ?? $anyBranch?->id,
-                'subject'       => 'Report export to Excel fails',
-                'description'   => 'Clicking Export on the disbursement report throws a 500 error.',
-                'priority'      => 'medium',
+                'category'      => $appLMS ?: $appCat,
+                'subcategory'   => $sub($appLMS ?: $appCat, 'Payment receipt Failed'),
+                'branch'        => $coimbatore,
+                'subject'       => 'LMS payment receipt generation failing',
+                'description'   => 'Disbursement receipts are not being generated since the morning batch run. Branch is unable to share docs with customers.',
+                'priority'      => 'high',
                 'status'        => 'assigned',
-                'assigned_to'   => $appJr?->id,
-                'assigned_by'   => $appTL->id,
-                'assigned_at'   => Carbon::now()->subHours(5),
-                'created_by'    => ($neha?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subHours(6),
+                'creator'       => $sandeep,
+                'assignee'      => $sayli,
+                'assigner'      => $prashant,
+                'created_at'    => $now->copy()->subHours(6),
+                'assigned_at'   => $now->copy()->subHours(5),
                 'tat_hours'     => 8,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Ticket created by ' . ($neha?->name ?? $md->name), 'user' => $neha ?? $md, 'at' => Carbon::now()->subHours(6)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . $appJr?->name,                     'user' => $appTL,       'at' => Carbon::now()->subHours(5)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subHours(6)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subHours(5),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
                 ],
                 'updates' => [
-                    ['note' => 'Reproduced locally, looks like a timeout in the PDF renderer. Investigating.', 'user' => $appJr, 'at' => Carbon::now()->subHours(4)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(4),
+                        'note' => 'Reproduced — overnight batch failed on tax-config refresh, investigating.'],
                 ],
             ],
 
-            // 3. In-progress infra ticket, with vendor + vendor_reference — Delhi Credit
+            // 3. In-progress infrastructure ticket with vendor (Pune Corp)
             [
-                'ticket_number' => 'TKT-DEMO-003',
+                'ticket_number' => $next(),
                 'support_type'  => 'infrastructure',
-                'category_id'   => $infraCat->id,
-                'subcategory_id'=> $infraSub?->id,
-                'branch_id'     => $delhiBranch?->id ?? $anyBranch?->id,
-                'vendor_id'     => $dellVendor?->id,
+                'category'      => $infraCat,
+                'subcategory'   => $sub($infraCat, 'Server Down / Unresponsive'),
+                'branch'        => $puneCorp,
+                'vendor'        => $dellVendor,
                 'vendor_reference' => 'DELL-SR-88472361',
-                'subject'       => 'Server RAID degraded — Delhi HQ',
-                'description'   => 'Dell PERC alert on rack-2 server. Running on single disk. Requested replacement.',
+                'subject'       => 'Pune Corp — RAID degraded on rack-2 server',
+                'description'   => 'Dell PERC alert. Running on single disk. Logged with Dell support, awaiting drive.',
                 'priority'      => 'high',
                 'status'        => 'in_progress',
-                'assigned_to'   => $infraJr?->id,
-                'assigned_by'   => $infraTL->id,
-                'assigned_at'   => Carbon::now()->subDays(1),
-                'created_by'    => ($arjun?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subDays(1)->subHours(2),
+                'creator'       => $vivek,
+                'assignee'      => $vishalG,
+                'assigner'      => $vishalS,
+                'created_at'    => $now->copy()->subDays(1)->subHours(2),
+                'assigned_at'   => $now->copy()->subDays(1),
                 'tat_hours'     => 24,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Ticket created by ' . ($arjun?->name ?? $md->name), 'user' => $arjun ?? $md, 'at' => Carbon::now()->subDays(1)->subHours(2)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . $infraJr?->name,                    'user' => $infraTL,       'at' => Carbon::now()->subDays(1)],
-                    ['action_type' => 'vendor_reference_updated', 'description' => 'Vendor reference set to: DELL-SR-88472361', 'old_value' => null, 'new_value' => 'DELL-SR-88472361', 'user' => $infraJr, 'at' => Carbon::now()->subHours(20)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subDays(1)->subHours(2)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subDays(1),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                    ['action_type' => 'vendor_reference_updated', 'who' => 'assignee', 'at' => $now->copy()->subHours(20),
+                        'description' => fn () => 'Vendor reference set to: DELL-SR-88472361',
+                        'old_value' => null, 'new_value' => 'DELL-SR-88472361'],
                 ],
                 'updates' => [
-                    ['status_from' => 'assigned', 'status_to' => 'in_progress', 'note' => 'Logged with Dell support. SR number captured.', 'user' => $infraJr, 'at' => Carbon::now()->subHours(20)],
-                    ['note' => 'Dell dispatching replacement drive, ETA tomorrow 10 AM.', 'user' => $infraJr, 'at' => Carbon::now()->subHours(8)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(20),
+                        'status_from' => 'assigned', 'status_to' => 'in_progress',
+                        'note' => 'Logged with Dell support. SR captured.'],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(8),
+                        'note' => 'Dell dispatching replacement drive, ETA tomorrow 10 AM.'],
                 ],
             ],
 
-            // 4. On-hold infra ticket — Bengaluru IT Support
+            // 4. On-hold infra ticket — Bengaluru RO (waiting on Airtel)
             [
-                'ticket_number' => 'TKT-DEMO-004',
+                'ticket_number' => $next(),
                 'support_type'  => 'infrastructure',
-                'category_id'   => $infraCat->id,
-                'subcategory_id'=> $infraSub?->id,
-                'branch_id'     => $blrBranch?->id ?? $anyBranch?->id,
-                'vendor_id'     => $ciscoVendor?->id,
-                'vendor_reference' => 'CSC-TAC-991203',
-                'subject'       => 'Core switch packet loss — Bengaluru',
-                'description'   => 'Intermittent 15-20% packet loss on branch VLAN 40.',
+                'category'      => $infraNet ?: $infraCat,
+                'subcategory'   => $sub($infraNet ?: $infraCat, 'WiFi Not Connecting'),
+                'branch'        => $bangaloreRO,
+                'vendor'        => $airtelVendor,
+                'vendor_reference' => 'ATL-CRN-99102345',
+                'subject'       => 'Bengaluru RO — branch ILL link flapping',
+                'description'   => 'Internet ILL link drops every 30-40 minutes. Branch unable to access LMS reliably.',
                 'priority'      => 'medium',
                 'status'        => 'hold',
-                'hold_started_at' => Carbon::now()->subHours(6),
-                'hold_total_seconds' => 0,
-                'assigned_to'   => $infraTL->id,
-                'assigned_by'   => $itHead?->id ?? $admin->id,
-                'assigned_at'   => Carbon::now()->subDays(2),
-                'created_by'    => ($karthik?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subDays(2)->subHours(3),
+                'hold_started_at' => $now->copy()->subHours(6),
+                'creator'       => $sarveish,
+                'assignee'      => $vishalS,
+                'assigner'      => $yogesh ?? $admin,
+                'created_at'    => $now->copy()->subDays(2)->subHours(3),
+                'assigned_at'   => $now->copy()->subDays(2),
                 'tat_hours'     => 12,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Ticket created by ' . ($karthik?->name ?? $md->name), 'user' => $karthik ?? $md, 'at' => Carbon::now()->subDays(2)->subHours(3)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . $infraTL->name,                       'user' => $itHead ?? $admin, 'at' => Carbon::now()->subDays(2)],
-                    ['action_type' => 'status_changed', 'description' => 'Ticket put on hold — waiting on Cisco TAC', 'old_value' => 'in_progress', 'new_value' => 'hold', 'user' => $infraTL, 'at' => Carbon::now()->subHours(6)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subDays(2)->subHours(3)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subDays(2),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                    ['action_type' => 'status_changed', 'who' => 'assignee', 'at' => $now->copy()->subHours(6),
+                        'description' => fn () => 'Ticket put on hold — waiting on Airtel NOC',
+                        'old_value' => 'in_progress', 'new_value' => 'hold'],
                 ],
                 'updates' => [
-                    ['note' => 'Logged TAC ticket with Cisco for deeper packet capture review.', 'user' => $infraTL, 'at' => Carbon::now()->subHours(10)],
-                    ['status_from' => 'in_progress', 'status_to' => 'hold', 'note' => 'On hold: awaiting Cisco engineer callback.', 'user' => $infraTL, 'at' => Carbon::now()->subHours(6)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(10),
+                        'note' => 'Logged with Airtel NOC for line trace and CRN allocation.'],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(6),
+                        'status_from' => 'in_progress', 'status_to' => 'hold',
+                        'note' => 'On hold: Airtel field engineer dispatching tomorrow morning.'],
                 ],
             ],
 
-            // 5. Resolved application ticket — Chennai Ops
+            // 5. Resolved application — Vijaywada RO (Andhra Pradesh)
             [
-                'ticket_number' => 'TKT-DEMO-005',
+                'ticket_number' => $next(),
                 'support_type'  => 'application',
-                'category_id'   => $appCat->id,
-                'subcategory_id'=> $appSub?->id,
-                'branch_id'     => $chnBranch?->id ?? $anyBranch?->id,
-                'subject'       => 'Password reset not sending email',
-                'description'   => 'The Forgot Password flow does not deliver the reset email.',
+                'category'      => $appCredit ?: $appCat,
+                'subcategory'   => $sub($appCredit ?: $appCat, 'Document Upload'),
+                'branch'        => $vijaywadaRO,
+                'subject'       => 'Credit module — document upload throwing 500 error',
+                'description'   => 'Uploading PD verification documents fails with a server error. Multiple users affected.',
                 'priority'      => 'medium',
                 'status'        => 'resolved',
-                'assigned_to'   => $appJr?->id,
-                'assigned_by'   => $appTL->id,
-                'assigned_at'   => Carbon::now()->subDays(3),
-                'resolved_at'   => Carbon::now()->subDays(2),
-                'created_by'    => ($priya?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subDays(3)->subHours(1),
+                'creator'       => $ravindra,
+                'assignee'      => $omkar,
+                'assigner'      => $prashant,
+                'created_at'    => $now->copy()->subDays(3)->subHours(1),
+                'assigned_at'   => $now->copy()->subDays(3),
+                'resolved_at'   => $now->copy()->subDays(2),
                 'tat_hours'     => 8,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Ticket created by ' . ($priya?->name ?? $md->name), 'user' => $priya ?? $md, 'at' => Carbon::now()->subDays(3)->subHours(1)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . $appJr?->name,                      'user' => $appTL,        'at' => Carbon::now()->subDays(3)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subDays(3)->subHours(1)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subDays(3),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
                 ],
                 'updates' => [
-                    ['status_from' => 'assigned', 'status_to' => 'in_progress', 'note' => 'SMTP queue was stuck, restarting mailer.', 'user' => $appJr, 'at' => Carbon::now()->subDays(2)->subHours(6)],
-                    ['status_from' => 'in_progress', 'status_to' => 'resolved', 'note' => 'Mailer restarted, delivery restored. Verified with a test account.', 'user' => $appJr, 'at' => Carbon::now()->subDays(2)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subDays(2)->subHours(6),
+                        'status_from' => 'assigned', 'status_to' => 'in_progress',
+                        'note' => 'Storage path permissions had reset after deploy, fixing.'],
+                    ['who' => 'assignee', 'at' => $now->copy()->subDays(2),
+                        'status_from' => 'in_progress', 'status_to' => 'resolved',
+                        'note' => 'Permissions corrected, uploads verified end-to-end.'],
                 ],
             ],
 
-            // 6. Closed admin ticket — Chandigarh HR
+            // 6. Closed admin/HR ticket — Jaipur RO
             [
-                'ticket_number' => 'TKT-DEMO-006',
+                'ticket_number' => $next(),
                 'support_type'  => 'admin',
-                'category_id'   => $adminCat->id,
-                'subcategory_id'=> $adminSub?->id,
-                'branch_id'     => $chdBranch?->id ?? $anyBranch?->id,
-                'subject'       => 'ID card reprint for new joiner',
-                'description'   => 'Please reprint ID for new joiner, employee code EMP-2026-044.',
+                'category'      => $adminSup ?: $adminFac,
+                'subcategory'   => $sub($adminSup ?: $adminFac, 'ID Card Issue / Replacement'),
+                'branch'        => $jaipurRO,
+                'subject'       => 'ID card reprint — new joiner EMP-2026-128',
+                'description'   => 'Please reprint ID card for new joiner.',
                 'priority'      => 'low',
                 'status'        => 'closed',
-                'assigned_to'   => $adminJr?->id,
-                'assigned_by'   => $adminTL?->id ?? $admin->id,
-                'assigned_at'   => Carbon::now()->subDays(5),
-                'resolved_at'   => Carbon::now()->subDays(4),
-                'closed_at'     => Carbon::now()->subDays(3),
-                'created_by'    => ($simran?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subDays(5)->subHours(2),
+                'creator'       => $sanjay,
+                'assignee'      => $admin,
+                'assigner'      => $admin,
+                'created_at'    => $now->copy()->subDays(5)->subHours(2),
+                'assigned_at'   => $now->copy()->subDays(5),
+                'resolved_at'   => $now->copy()->subDays(4),
+                'closed_at'     => $now->copy()->subDays(3),
                 'tat_hours'     => 24,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Ticket created by ' . ($simran?->name ?? $md->name), 'user' => $simran ?? $md,    'at' => Carbon::now()->subDays(5)->subHours(2)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . ($adminJr?->name ?? 'Admin HR'),     'user' => $adminTL ?? $admin, 'at' => Carbon::now()->subDays(5)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subDays(5)->subHours(2)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subDays(5),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
                 ],
                 'updates' => [
-                    ['status_from' => 'assigned', 'status_to' => 'resolved', 'note' => 'ID card printed and handed over.',  'user' => $adminJr ?? $admin, 'at' => Carbon::now()->subDays(4)],
-                    ['status_from' => 'resolved', 'status_to' => 'closed',   'note' => 'Confirmed receipt, closing ticket.', 'user' => $simran ?? $md,     'at' => Carbon::now()->subDays(3)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subDays(4),
+                        'status_from' => 'assigned', 'status_to' => 'resolved',
+                        'note' => 'ID card printed and handed over to admin desk.'],
+                    ['who' => 'creator', 'at' => $now->copy()->subDays(3),
+                        'status_from' => 'resolved', 'status_to' => 'closed',
+                        'note' => 'Confirmed receipt, closing ticket.'],
                 ],
             ],
 
-            // 7. TAT-violated critical infra ticket — Kolkata Credit
+            // 7. TAT-violated critical infra — Hyderabad RO
             [
-                'ticket_number' => 'TKT-DEMO-007',
+                'ticket_number' => $next(),
                 'support_type'  => 'infrastructure',
-                'category_id'   => $infraCat->id,
-                'subcategory_id'=> $infraSub?->id,
-                'branch_id'     => $kolBranch?->id ?? $anyBranch?->id,
-                'vendor_id'     => $dellVendor?->id,
-                'subject'       => 'UPS battery failure in Kolkata branch',
-                'description'   => 'Main UPS reporting battery failure. Site running on mains-only.',
+                'category'      => $infraCat,
+                'subcategory'   => $sub($infraCat, 'Server Down / Unresponsive'),
+                'branch'        => $hyderabadRO,
+                'vendor'        => $hpVendor,
+                'subject'       => 'UPS battery failure — Hyderabad RO',
+                'description'   => 'Main UPS reporting battery failure. Site running on mains-only. Replacement urgent.',
                 'priority'      => 'critical',
                 'status'        => 'assigned',
                 'is_tat_violated' => true,
-                'assigned_to'   => $infraTL->id,
-                'assigned_by'   => $admin->id,
-                'assigned_at'   => Carbon::now()->subHours(30),
-                'created_by'    => ($anindya?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subHours(30),
+                'creator'       => $hari,
+                'assignee'      => $vishalS,
+                'assigner'      => $admin,
+                'created_at'    => $now->copy()->subHours(30),
+                'assigned_at'   => $now->copy()->subHours(30),
                 'tat_hours'     => 2,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Ticket created by ' . ($anindya?->name ?? $md->name), 'user' => $anindya ?? $md, 'at' => Carbon::now()->subHours(30)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . $infraTL->name,                       'user' => $admin,           'at' => Carbon::now()->subHours(30)],
-                    ['action_type' => 'tat_breached', 'description' => 'TAT breached', 'user' => $admin, 'at' => Carbon::now()->subHours(28)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subHours(30)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subHours(30),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                    ['action_type' => 'tat_breached', 'who' => 'assigner', 'at' => $now->copy()->subHours(28),
+                        'description' => fn () => 'TAT breached'],
                 ],
             ],
 
-            // 8. Red-flagged management ticket (critical)
+            // 8. Red-flagged management ticket (critical, in progress)
             [
-                'ticket_number' => 'TKT-DEMO-008',
+                'ticket_number' => $next(),
                 'support_type'  => 'application',
-                'category_id'   => $appCat->id,
-                'subcategory_id'=> $appSub?->id,
-                'branch_id'     => $anyBranch?->id,
-                'subject'       => 'MD dashboard shows wrong disbursement totals',
-                'description'   => 'Numbers on the management dashboard do not reconcile with the report module.',
+                'category'      => $appCredit ?: $appCat,
+                'subcategory'   => $sub($appCredit ?: $appCat, 'Deal Summary'),
+                'branch'        => $puneCorp,
+                'subject'       => 'MD dashboard — disbursement totals do not match report module',
+                'description'   => 'Numbers on the management dashboard do not reconcile with the daily disbursement report.',
                 'priority'      => 'critical',
                 'status'        => 'in_progress',
                 'is_red_flag'   => true,
-                'assigned_to'   => $appTL->id,
-                'assigned_by'   => $itHead?->id ?? $admin->id,
-                'assigned_at'   => Carbon::now()->subHours(3),
-                'created_by'    => $md->id,
-                'created_at'    => Carbon::now()->subHours(4),
+                'creator'       => $pankaj,
+                'assignee'      => $prashant,
+                'assigner'      => $yogesh ?? $admin,
+                'created_at'    => $now->copy()->subHours(4),
+                'assigned_at'   => $now->copy()->subHours(3),
                 'tat_hours'     => 4,
-                'activities'    => [
-                    ['action_type' => 'created',  'description' => 'Red-flagged ticket created by management',      'user' => $md,    'at' => Carbon::now()->subHours(4)],
-                    ['action_type' => 'assigned', 'description' => 'Assigned to ' . $appTL->name,                  'user' => $itHead ?? $admin, 'at' => Carbon::now()->subHours(3)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subHours(4),
+                        'description' => fn () => 'Red-flagged ticket created by management'],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subHours(3),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
                 ],
                 'updates' => [
-                    ['note' => 'Acknowledged. Comparing warehouse totals with the live report query now.', 'user' => $appTL, 'at' => Carbon::now()->subHours(2)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(2),
+                        'note' => 'Acknowledged. Comparing warehouse totals with the live report query now.'],
                 ],
             ],
 
-            // 9. Infra ticket with pending expense — Bhubaneswar Sales
+            // 9. Red-flagged + management — pending review (Vizag)
             [
-                'ticket_number' => 'TKT-DEMO-009',
+                'ticket_number' => $next(),
+                'support_type'  => 'application',
+                'category'      => $appCat,
+                'subcategory'   => $sub($appCat, 'Connector Issue'),
+                'branch'        => $vizag,
+                'subject'       => 'Aadhaar connector failing intermittently in Vizag',
+                'description'   => 'Aadhaar verification service times out 30-40% of the time. Slowing down all new files.',
+                'priority'      => 'critical',
+                'status'        => 'open',
+                'is_red_flag'   => true,
+                'creator'       => $sandeep,
+                'created_at'    => $now->copy()->subHours(2),
+                'tat_hours'     => 4,
+                'activities' => [
+                    ['action_type' => 'created', 'who' => 'creator', 'at' => $now->copy()->subHours(2),
+                        'description' => fn () => 'Red-flagged ticket created by management'],
+                ],
+            ],
+
+            // 10. Infra with pending expense — Coimbatore (replacement WAP)
+            [
+                'ticket_number' => $next(),
                 'support_type'  => 'infrastructure',
-                'category_id'   => $infraCat->id,
-                'subcategory_id'=> $infraSub?->id,
-                'branch_id'     => $bhuBranch?->id ?? $anyBranch?->id,
-                'vendor_id'     => $ciscoVendor?->id,
-                'subject'       => 'Replacement WiFi AP for ground floor',
+                'category'      => $infraNet ?: $infraCat,
+                'subcategory'   => $sub($infraNet ?: $infraCat, 'WiFi Not Connecting'),
+                'branch'        => $coimbatore,
+                'vendor'        => $hpVendor,
+                'subject'       => 'Replacement WiFi AP — Coimbatore RO ground floor',
                 'description'   => 'Existing AP at front desk is unresponsive. Need replacement unit.',
                 'priority'      => 'medium',
                 'status'        => 'in_progress',
-                'assigned_to'   => $infraJr?->id,
-                'assigned_by'   => $infraTL->id,
-                'assigned_at'   => Carbon::now()->subDays(1)->subHours(2),
-                'created_by'    => ($manoj?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subDays(1)->subHours(4),
+                'creator'       => $ujjwal,
+                'assignee'      => $kumar,
+                'assigner'      => $vishalS,
+                'created_at'    => $now->copy()->subDays(1)->subHours(4),
+                'assigned_at'   => $now->copy()->subDays(1)->subHours(2),
                 'tat_hours'     => 16,
-                'activities'    => [
-                    ['action_type' => 'created',      'description' => 'Ticket created by ' . ($manoj?->name ?? $md->name), 'user' => $manoj ?? $md, 'at' => Carbon::now()->subDays(1)->subHours(4)],
-                    ['action_type' => 'assigned',     'description' => 'Assigned to ' . $infraJr?->name,                    'user' => $infraTL,       'at' => Carbon::now()->subDays(1)->subHours(2)],
-                    ['action_type' => 'expense_added','description' => 'Expense submitted for approval: ₹8,500.00',         'user' => $infraJr,      'at' => Carbon::now()->subHours(5)],
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subDays(1)->subHours(4)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subDays(1)->subHours(2),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                    ['action_type' => 'expense_added', 'who' => 'assignee', 'at' => $now->copy()->subHours(5),
+                        'description' => fn () => 'Expense submitted for approval: ₹8,500.00'],
                 ],
                 'updates' => [
-                    ['note' => 'Ordered replacement AP; invoice uploaded for approval.', 'user' => $infraJr, 'at' => Carbon::now()->subHours(5)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(5),
+                        'note' => 'Ordered replacement AP; invoice uploaded for approval.'],
                 ],
                 'expense' => [
-                    'description' => 'Cisco WiFi AP (ground floor replacement)',
+                    'description' => 'HP WiFi AP (ground floor replacement)',
                     'amount'      => 8500.00,
-                    'expense_date'=> Carbon::now()->subHours(5)->toDateString(),
+                    'expense_date'=> $now->copy()->subHours(5)->toDateString(),
                     'status'      => 'pending',
-                    'added_by'    => $infraJr?->id,
                 ],
             ],
 
-            // 10. Pending info — Pune Sales
+            // 11. Pending info — Madurai (TN), assigned to Sayli
             [
-                'ticket_number' => 'TKT-DEMO-010',
+                'ticket_number' => $next(),
                 'support_type'  => 'application',
-                'category_id'   => $appCat->id,
-                'subcategory_id'=> $appSub?->id,
-                'branch_id'     => $puneBranch?->id ?? $anyBranch?->id,
-                'subject'       => 'Cannot log in to CRM',
-                'description'   => 'Login screen says invalid credentials for the last hour.',
+                'category'      => $appCat,
+                'subcategory'   => $sub($appCat, 'User ID locked / inactive'),
+                'branch'        => $madurai,
+                'subject'       => 'User ID locked — branch credit officer',
+                'description'   => 'Branch credit officer locked out after 3 failed attempts. Needs unlock + password reset.',
                 'priority'      => 'medium',
                 'status'        => 'pending_info',
-                'assigned_to'   => $appJr?->id,
-                'assigned_by'   => $appTL->id,
-                'assigned_at'   => Carbon::now()->subHours(4),
-                'created_by'    => ($neha?->id) ?? $md->id,
-                'created_at'    => Carbon::now()->subHours(5),
+                'creator'       => $vikrant,
+                'assignee'      => $sayli,
+                'assigner'      => $prashant,
+                'created_at'    => $now->copy()->subHours(5),
+                'assigned_at'   => $now->copy()->subHours(4),
                 'tat_hours'     => 8,
-                'activities'    => [
-                    ['action_type' => 'created',        'description' => 'Ticket created by ' . ($neha?->name ?? $md->name), 'user' => $neha ?? $md, 'at' => Carbon::now()->subHours(5)],
-                    ['action_type' => 'assigned',       'description' => 'Assigned to ' . $appJr?->name,                     'user' => $appTL,       'at' => Carbon::now()->subHours(4)],
-                    ['action_type' => 'status_changed', 'description' => 'Requested more information',    'old_value' => 'assigned', 'new_value' => 'pending_info', 'user' => $appJr, 'at' => Carbon::now()->subHours(2)],
+                'activities' => [
+                    ['action_type' => 'created',        'who' => 'creator',  'at' => $now->copy()->subHours(5)],
+                    ['action_type' => 'assigned',       'who' => 'assigner', 'at' => $now->copy()->subHours(4),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                    ['action_type' => 'status_changed', 'who' => 'assignee', 'at' => $now->copy()->subHours(2),
+                        'description' => fn () => 'Requested more information',
+                        'old_value' => 'assigned', 'new_value' => 'pending_info'],
                 ],
                 'updates' => [
-                    ['status_from' => 'assigned', 'status_to' => 'pending_info', 'note' => 'Can you confirm your employee ID and the exact error text?', 'user' => $appJr, 'at' => Carbon::now()->subHours(2)],
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(2),
+                        'status_from' => 'assigned', 'status_to' => 'pending_info',
+                        'note' => 'Please confirm employee ID and the exact error text on screen.'],
+                ],
+            ],
+
+            // 12. Reopened resolved app ticket — Kolhapur (showing the reopen flow)
+            [
+                'ticket_number' => $next(),
+                'support_type'  => 'application',
+                'category'      => $appLMS ?: $appCat,
+                'subcategory'   => $sub($appLMS ?: $appCat, 'SMS Issue'),
+                'branch'        => $kolhapur,
+                'subject'       => 'EMI reminder SMS not delivered to a subset of customers',
+                'description'   => 'After last weekend\'s deploy, ~10% of EMI reminder SMS are silently failing.',
+                'priority'      => 'medium',
+                'status'        => 'reopen',
+                'creator'       => $ravindra,
+                'assignee'      => $kalyani,
+                'assigner'      => $prashant,
+                'created_at'    => $now->copy()->subDays(4),
+                'assigned_at'   => $now->copy()->subDays(4),
+                'reopen_count'  => 1,
+                'reopened_at'   => $now->copy()->subHours(6),
+                'tat_hours'     => 12,
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subDays(4)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subDays(4),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                    ['action_type' => 'reopened', 'who' => 'creator',  'at' => $now->copy()->subHours(6),
+                        'description' => fn ($t) => 'Ticket reopened by ' . ($t['creator']->name ?? '—') . ' (#1)',
+                        'old_value' => 'resolved', 'new_value' => 'reopen'],
+                ],
+                'updates' => [
+                    ['who' => 'assignee', 'at' => $now->copy()->subDays(3),
+                        'status_from' => 'assigned', 'status_to' => 'resolved',
+                        'note' => 'Telecom gateway throttling adjusted, retried failed batch successfully.'],
+                    ['who' => 'creator', 'at' => $now->copy()->subHours(6),
+                        'status_from' => 'resolved', 'status_to' => 'reopen',
+                        'note' => 'Issue is back today — ~5% failures still observed in latest batch.'],
+                ],
+            ],
+
+            // 13. Routine printer ticket — Hassan (KA), low priority, assigned to Kumar
+            [
+                'ticket_number' => $next(),
+                'support_type'  => 'infrastructure',
+                'category'      => $infraPrn ?: $infraCat,
+                'subcategory'   => $sub($infraPrn ?: $infraCat, 'Network Printer Offline'),
+                'branch'        => $hassan,
+                'subject'       => 'Hassan branch network printer offline',
+                'description'   => 'Branch printer not visible on the network. Trying to take print of sanction letter.',
+                'priority'      => 'low',
+                'status'        => 'in_progress',
+                'creator'       => $sarveish,
+                'assignee'      => $kumar,
+                'assigner'      => $vishalS,
+                'created_at'    => $now->copy()->subHours(7),
+                'assigned_at'   => $now->copy()->subHours(6),
+                'tat_hours'     => 24,
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subHours(7)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subHours(6),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                ],
+                'updates' => [
+                    ['who' => 'assignee', 'at' => $now->copy()->subHours(3),
+                        'status_from' => 'assigned', 'status_to' => 'in_progress',
+                        'note' => 'Connected remotely — looks like a static IP conflict, asking branch to power cycle.'],
+                ],
+            ],
+
+            // 14. HR query — admin support — Nashik (assigned to admin, simple)
+            [
+                'ticket_number' => $next(),
+                'support_type'  => 'admin',
+                'category'      => $adminHR ?: $adminFac,
+                'subcategory'   => $sub($adminHR ?: $adminFac, 'Payslip Issue / Discrepancy'),
+                'branch'        => $nashik,
+                'subject'       => 'Payslip discrepancy — March 2026',
+                'description'   => 'Variable component in March payslip looks incorrect. Need finance to review.',
+                'priority'      => 'medium',
+                'status'        => 'assigned',
+                'creator'       => $vivek,
+                'assignee'      => $admin,
+                'assigner'      => $admin,
+                'created_at'    => $now->copy()->subHours(20),
+                'assigned_at'   => $now->copy()->subHours(20),
+                'tat_hours'     => 24,
+                'activities' => [
+                    ['action_type' => 'created',  'who' => 'creator',  'at' => $now->copy()->subHours(20)],
+                    ['action_type' => 'assigned', 'who' => 'assigner', 'at' => $now->copy()->subHours(20),
+                        'description' => fn ($t) => 'Assigned to ' . ($t['assignee']->name ?? '—')],
+                ],
+            ],
+
+            // 15. Facility — Warangal (TG), low, open (escalates because TAT-2 violated soon)
+            [
+                'ticket_number' => $next(),
+                'support_type'  => 'admin',
+                'category'      => $adminFac,
+                'subcategory'   => $sub($adminFac, 'AC Not Working / Temperature Issue'),
+                'branch'        => $warangal,
+                'subject'       => 'AC not cooling — Warangal branch front office',
+                'description'   => 'Front office AC tripping repeatedly. Branch is uncomfortable, customers waiting.',
+                'priority'      => 'high',
+                'status'        => 'open',
+                'creator'       => $hari,
+                'created_at'    => $now->copy()->subHours(3),
+                'tat_hours'     => 8,
+                'activities' => [
+                    ['action_type' => 'created', 'who' => 'creator', 'at' => $now->copy()->subHours(3)],
                 ],
             ],
         ];
 
         foreach ($tickets as $data) {
-            $activities = $data['activities'] ?? [];
-            $updates    = $data['updates']    ?? [];
-            $expense    = $data['expense']    ?? null;
-            unset($data['activities'], $data['updates'], $data['expense']);
-
-            // Skip silently if subcategory/category not resolvable for this support_type.
-            if (empty($data['subcategory_id']) || empty($data['category_id'])) {
+            if (empty($data['category']) || empty($data['subcategory']) || empty($data['branch']) || empty($data['creator'])) {
                 continue;
             }
 
             $createdAt = $data['created_at'];
-            $tatHours  = $data['tat_hours'];
-            $data['tat_deadline'] = $createdAt->copy()->addHours((int) $tatHours);
+            $deadline  = $createdAt->copy()->addHours((int) $data['tat_hours']);
 
-            $ticket = Ticket::updateOrCreate(
-                ['ticket_number' => $data['ticket_number']],
-                $data + ['updated_at' => Carbon::now()]
-            );
+            $ticket = Ticket::create([
+                'ticket_number'        => $data['ticket_number'],
+                'support_type'         => $data['support_type'],
+                'category_id'          => $data['category']->id,
+                'subcategory_id'       => $data['subcategory']->id,
+                'branch_id'            => $data['branch']->id,
+                'vendor_id'            => $data['vendor']->id ?? null,
+                'vendor_reference'     => $data['vendor_reference'] ?? null,
+                'subject'              => $data['subject'],
+                'description'          => $data['description'],
+                'priority'             => $data['priority'],
+                'status'               => $data['status'],
+                'is_red_flag'          => (bool) ($data['is_red_flag'] ?? false),
+                'is_tat_violated'      => (bool) ($data['is_tat_violated'] ?? false),
+                'created_by'           => $data['creator']->id,
+                'assigned_to'          => $data['assignee']->id ?? null,
+                'assigned_by'          => $data['assigner']->id ?? null,
+                'employee_contact_name'        => $data['creator']->name,
+                'employee_contact_phone'       => $data['creator']->phone ?? '0000000000',
+                'employee_contact_email'       => $data['creator']->email,
+                'employee_contact_employee_id' => $data['creator']->employee_id ?? null,
+                'assigned_at'          => $data['assigned_at']    ?? null,
+                'resolved_at'          => $data['resolved_at']    ?? null,
+                'closed_at'            => $data['closed_at']      ?? null,
+                'reopened_at'          => $data['reopened_at']    ?? null,
+                'reopen_count'         => $data['reopen_count']   ?? 0,
+                'hold_started_at'      => $data['hold_started_at'] ?? null,
+                'hold_total_seconds'   => 0,
+                'tat_hours'            => $data['tat_hours'],
+                'tat_deadline'         => $deadline,
+                'status_entered_at'    => $createdAt,
+                'status_tat_deadline'  => $deadline,
+                'created_at'           => $createdAt,
+                'updated_at'           => $createdAt,
+            ]);
 
-            // Reset child rows so reseeding gives clean state
-            $ticket->activities()->delete();
-            $ticket->updates()->delete();
-            $ticket->expenses()->delete();
+            foreach (($data['activities'] ?? []) as $a) {
+                $userRef = $data[$a['who']] ?? $data['creator'];
+                $description = $a['description'] ?? null;
+                if (is_callable($description)) {
+                    $description = $description($data);
+                } elseif ($description === null) {
+                    $description = $this->defaultActivityDescription($a['action_type'], $userRef);
+                }
 
-            foreach ($activities as $a) {
                 TicketActivity::create([
                     'ticket_id'   => $ticket->id,
-                    'user_id'     => $a['user']?->id,
+                    'user_id'     => $userRef?->id,
                     'action_type' => $a['action_type'],
-                    'description' => $a['description'],
+                    'description' => $description,
                     'old_value'   => $a['old_value'] ?? null,
                     'new_value'   => $a['new_value'] ?? null,
                     'created_at'  => $a['at'],
                 ]);
             }
 
-            foreach ($updates as $u) {
+            foreach (($data['updates'] ?? []) as $u) {
+                $userRef = $data[$u['who']] ?? $data['creator'];
                 TicketUpdate::create([
                     'ticket_id'   => $ticket->id,
-                    'user_id'     => $u['user']?->id,
+                    'user_id'     => $userRef?->id,
                     'status_from' => $u['status_from'] ?? null,
                     'status_to'   => $u['status_to']   ?? null,
                     'note'        => $u['note']        ?? null,
@@ -395,18 +641,30 @@ class DemoTicketSeeder extends Seeder
                 ]);
             }
 
-            if ($expense) {
+            if (!empty($data['expense'])) {
                 TicketExpense::create([
                     'ticket_id'    => $ticket->id,
-                    'added_by'     => $expense['added_by'],
-                    'description'  => $expense['description'],
-                    'amount'       => $expense['amount'],
-                    'expense_date' => $expense['expense_date'],
-                    'status'       => $expense['status'],
+                    'added_by'     => ($data['assignee'] ?? $data['creator'])->id,
+                    'description'  => $data['expense']['description'],
+                    'amount'       => $data['expense']['amount'],
+                    'expense_date' => $data['expense']['expense_date'],
+                    'status'       => $data['expense']['status'],
                 ]);
             }
         }
 
-        $this->command?->info('Seeded ' . count($tickets) . ' demo tickets.');
+        $this->command?->info('Seeded ' . count($tickets) . ' demo tickets (cleared previous tickets first).');
+    }
+
+    private function defaultActivityDescription(string $actionType, ?User $user): string
+    {
+        $name = $user?->name ?? '—';
+        return match ($actionType) {
+            'created'  => "Ticket created by {$name}",
+            'assigned' => "Assigned",
+            'reopened' => "Ticket reopened by {$name}",
+            'closed'   => "Ticket closed by {$name}",
+            default    => ucfirst(str_replace('_', ' ', $actionType)) . " by {$name}",
+        };
     }
 }

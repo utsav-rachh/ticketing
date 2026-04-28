@@ -57,8 +57,23 @@ class TicketController extends Controller
         if ($request->filled('from')) $q->whereDate('created_at', '>=', $request->input('from'));
         if ($request->filled('to'))   $q->whereDate('created_at', '<=', $request->input('to'));
 
-        $tickets = $q->latest()->paginate(20)->withQueryString();
-        return view('tickets.index', compact('tickets'));
+        // Sortable columns. Whitelist is enforced so users can't inject
+        // arbitrary SQL identifiers via the query string.
+        $sortable = [
+            'ticket_number' => 'ticket_number',
+            'subject'       => 'subject',
+            'support_type'  => 'support_type',
+            'priority'      => 'priority',
+            'status'        => 'status',
+            'created_at'    => 'created_at',
+            'tat_deadline'  => 'tat_deadline',
+        ];
+        $sort = $request->input('sort', 'created_at');
+        $dir  = strtolower($request->input('dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+        if (!isset($sortable[$sort])) $sort = 'created_at';
+
+        $tickets = $q->orderBy($sortable[$sort], $dir)->paginate(20)->withQueryString();
+        return view('tickets.index', compact('tickets', 'sort', 'dir'));
     }
 
     public function create()

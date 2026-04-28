@@ -17,22 +17,24 @@
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
     @foreach($cardSpec as [$label, $key, $color, $pct])
     @php $pct = max(0, min(100, (int) $pct)); @endphp
-    <div class="bg-white rounded-lg shadow-sm py-3 px-2 flex flex-col items-center justify-center">
-        <div class="relative w-20 h-20">
-            <svg viewBox="0 0 36 36" class="w-20 h-20 -rotate-90">
+    <div class="bg-white rounded-lg shadow-sm py-4 px-3 flex flex-col items-center justify-start text-center">
+        <div class="relative flex-shrink-0" style="width: 72px; height: 72px;">
+            <svg viewBox="0 0 36 36" style="width: 72px; height: 72px; transform: rotate(-90deg); display: block;">
                 <circle cx="18" cy="18" r="15.915" fill="none" stroke="#F3F4F6" stroke-width="3"></circle>
                 <circle cx="18" cy="18" r="15.915" fill="none"
                         stroke="{{ $color }}" stroke-width="3" stroke-linecap="round"
                         stroke-dasharray="{{ $pct }}, 100"></circle>
             </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <div class="text-xl font-bold leading-none" style="color: {{ $color }};">{{ $stats[$key] }}</div>
-                @if($key !== 'total')
-                <div class="text-[9px] text-gray-400 mt-0.5">{{ $pct }}%</div>
-                @endif
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-2xl font-bold leading-none" style="color: {{ $color }};">{{ $stats[$key] }}</span>
             </div>
         </div>
-        <div class="text-[11px] text-gray-600 mt-1.5 text-center font-medium">{{ $label }}</div>
+        <div class="mt-3 text-[11px] font-semibold text-gray-700 leading-tight">{{ $label }}</div>
+        @if($key !== 'total')
+        <div class="text-[10px] text-gray-400 mt-0.5">{{ $pct }}% of total</div>
+        @else
+        <div class="text-[10px] text-gray-400 mt-0.5">all tickets</div>
+        @endif
     </div>
     @endforeach
 </div>

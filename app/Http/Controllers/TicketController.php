@@ -51,6 +51,23 @@ class TicketController extends Controller
                 $q->where($filter, $request->input($filter));
             }
         }
+        // Dashboard tile shortcuts. status_group bundles related statuses
+        // ("open" = the live working set, "resolved" = resolved+closed) so a
+        // single click can match the dashboard counts. tat_violated and
+        // active_only mirror the dashboard's exclusion of resolved/closed.
+        $statusGroups = [
+            'open'     => ['open','assigned','in_progress','pending_info'],
+            'resolved' => ['resolved','closed'],
+        ];
+        if ($request->filled('status_group') && isset($statusGroups[$request->input('status_group')])) {
+            $q->whereIn('status', $statusGroups[$request->input('status_group')]);
+        }
+        if ($request->boolean('tat_violated')) {
+            $q->where('is_tat_violated', true)->whereNotIn('status', ['resolved','closed']);
+        }
+        if ($request->boolean('active_only')) {
+            $q->whereNotIn('status', ['resolved','closed']);
+        }
         if ($request->filled('region_id')) {
             $q->whereHas('branch', fn ($b) => $b->where('region_id', $request->input('region_id')));
         }
@@ -557,7 +574,7 @@ class TicketController extends Controller
     {
         if (!$request->user()->canExport()) abort(403);
 
-        $filters = $request->only(['status','support_type','priority','is_red_flag','region_id','from','to']);
+        $filters = $request->only(['status','support_type','priority','is_red_flag','region_id','from','to','status_group','tat_violated','active_only']);
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\TicketsExport($request->user(), $filters),
             'tickets-' . now()->format('Ymd-His') . '.xlsx'

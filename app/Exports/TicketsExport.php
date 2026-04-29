@@ -25,6 +25,20 @@ class TicketsExport implements FromQuery, WithHeadings, WithMapping
         foreach (['status','support_type','priority','is_red_flag'] as $f) {
             if (!empty($this->filters[$f])) $q->where($f, $this->filters[$f]);
         }
+        $statusGroups = [
+            'open'     => ['open','assigned','in_progress','pending_info'],
+            'resolved' => ['resolved','closed'],
+        ];
+        $group = $this->filters['status_group'] ?? null;
+        if ($group && isset($statusGroups[$group])) {
+            $q->whereIn('status', $statusGroups[$group]);
+        }
+        if (!empty($this->filters['tat_violated'])) {
+            $q->where('is_tat_violated', true)->whereNotIn('status', ['resolved','closed']);
+        }
+        if (!empty($this->filters['active_only'])) {
+            $q->whereNotIn('status', ['resolved','closed']);
+        }
         if (!empty($this->filters['region_id'])) {
             $q->whereHas('branch', fn ($b) => $b->where('region_id', $this->filters['region_id']));
         }

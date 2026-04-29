@@ -2,22 +2,22 @@
 @section('title', 'Dashboard')
 @section('content')
 
-{{-- Circular stat tiles. Each is a colored ring + big count + label below. --}}
+{{-- Circular stat tiles. Each is a colored ring + big count + label below. Clicking a tile opens the ticket list pre-filtered to that stat. --}}
 @php
     $statTotal = max(1, (int) $stats['total']);
     $cardSpec = [
-        ['Total',         'total',    '#0056B3', 100],
-        ['Open / Active', 'open',     '#0EA5E9', $statTotal ? round($stats['open']     / $statTotal * 100) : 0],
-        ['On Hold',       'hold',     '#A855F7', $statTotal ? round($stats['hold']     / $statTotal * 100) : 0],
-        ['Resolved',      'resolved', '#16A34A', $statTotal ? round($stats['resolved'] / $statTotal * 100) : 0],
-        ['TAT Violated',  'violated', '#DC2626', $statTotal ? round($stats['violated'] / $statTotal * 100) : 0],
-        ['Red-Flagged',   'red_flag', '#B91C1C', $statTotal ? round($stats['red_flag'] / $statTotal * 100) : 0],
+        ['Total',         'total',    '#0056B3', 100,                                                                              route('tickets.index')],
+        ['Open / Active', 'open',     '#0EA5E9', $statTotal ? round($stats['open']     / $statTotal * 100) : 0, route('tickets.index', ['status_group' => 'open'])],
+        ['On Hold',       'hold',     '#A855F7', $statTotal ? round($stats['hold']     / $statTotal * 100) : 0, route('tickets.index', ['status' => 'hold'])],
+        ['Resolved',      'resolved', '#16A34A', $statTotal ? round($stats['resolved'] / $statTotal * 100) : 0, route('tickets.index', ['status_group' => 'resolved'])],
+        ['TAT Violated',  'violated', '#DC2626', $statTotal ? round($stats['violated'] / $statTotal * 100) : 0, route('tickets.index', ['tat_violated' => 1])],
+        ['Red-Flagged',   'red_flag', '#B91C1C', $statTotal ? round($stats['red_flag'] / $statTotal * 100) : 0, route('tickets.index', ['is_red_flag' => 1, 'active_only' => 1])],
     ];
 @endphp
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-6">
-    @foreach($cardSpec as [$label, $key, $color, $pct])
+    @foreach($cardSpec as [$label, $key, $color, $pct, $url])
     @php $pct = max(0, min(100, (int) $pct)); @endphp
-    <div class="bg-white rounded-xl shadow-sm py-5 px-3 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow">
+    <a href="{{ $url }}" class="bg-white rounded-xl shadow-sm py-5 px-3 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-1" style="--tw-ring-color: {{ $color }};">
         <div class="rounded-full flex items-center justify-center"
              style="width: 80px; height: 80px;
                     background: {{ $color }}10;
@@ -28,7 +28,7 @@
         <div class="text-[10px] text-gray-400 mt-0.5">
             {{ $key === 'total' ? 'all tickets' : $pct . '% of total' }}
         </div>
-    </div>
+    </a>
     @endforeach
 </div>
 

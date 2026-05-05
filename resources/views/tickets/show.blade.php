@@ -53,6 +53,13 @@
                         @if($ticket->custom_issue) (<em class="text-gray-600">{{ $ticket->custom_issue }}</em>) @endif
                         &bull; {{ ucfirst($ticket->support_type) }}
                     </p>
+                    @if($ticket->project)
+                    <p class="text-xs mt-1">
+                        <span class="text-gray-500">Project:</span>
+                        <a href="{{ route('projects.show', $ticket->project) }}" class="text-brand-600 hover:underline font-mono">{{ $ticket->project->number }}</a>
+                        <span class="text-gray-700">· {{ $ticket->project->name }}</span>
+                    </p>
+                    @endif
                 </div>
                 <div class="flex flex-col gap-2">
                     @if(auth()->user()->canExport())
@@ -238,6 +245,9 @@
                             {{ $exp->status === 'approved' ? 'text-green-600' : ($exp->status === 'rejected' ? 'text-red-600' : 'text-yellow-600') }}">
                             {{ $exp->status }}
                         </span>
+                        @if($exp->requestedApprover)
+                        · approver: {{ $exp->requestedApprover->name }}
+                        @endif
                         @if($exp->invoice_path)
                         · <a href="{{ Storage::url($exp->invoice_path) }}" target="_blank" class="text-brand-500 hover:underline">invoice</a>
                         @endif
@@ -255,9 +265,27 @@
                 <input type="text" name="description" required placeholder="Description" class="border border-gray-300 rounded px-3 py-2 text-sm md:col-span-2">
                 <input type="number" name="amount" required placeholder="Amount (&#8377;)" min="0" step="0.01" class="border border-gray-300 rounded px-3 py-2 text-sm">
                 <input type="date" name="expense_date" required value="{{ date('Y-m-d') }}" class="border border-gray-300 rounded px-3 py-2 text-sm">
+                @if($ticket->project_id)
+                @php $defaultApprover = $ticket->project?->owner_id; @endphp
+                <select name="requested_approver_id" required class="border border-gray-300 rounded px-3 py-2 text-sm md:col-span-2 bg-white">
+                    <option value="">— Select approver —</option>
+                    @foreach($expenseApprovers as $u)
+                    <option value="{{ $u->id }}" {{ old('requested_approver_id', $defaultApprover) == $u->id ? 'selected' : '' }}>
+                        {{ $u->name }} ({{ $u->id == $defaultApprover ? 'project owner' : ucfirst($u->role) }})
+                    </option>
+                    @endforeach
+                </select>
+                <input type="file" name="invoice" required class="text-sm text-gray-500 md:col-span-2">
+                @else
                 <input type="file" name="invoice" required class="text-sm text-gray-500 md:col-span-3">
+                @endif
                 <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">Submit for approval</button>
             </form>
+            @if($ticket->project_id)
+            <p class="text-[11px] text-gray-500 mt-1">Approver list: project owner, all management users, and IT Head.</p>
+            @else
+            <p class="text-[11px] text-gray-500 mt-1">Approver: IT Head (default).</p>
+            @endif
             @endcan
         </div>
         @endif

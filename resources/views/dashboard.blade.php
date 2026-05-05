@@ -32,6 +32,29 @@
     @endforeach
 </div>
 
+@if(auth()->user()->canManageProjects())
+<div class="bg-white rounded-lg shadow p-4 mb-6">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+            <div class="text-sm font-semibold text-gray-700">Quick create</div>
+            <div class="text-xs text-gray-500">Start a new ticket or set up a project workspace.</div>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ route('tickets.create') }}"
+               class="inline-flex items-center gap-2 text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                New Ticket
+            </a>
+            <a href="{{ route('projects.create') }}"
+               class="inline-flex items-center gap-2 bg-white border border-brand-500 text-brand-600 px-4 py-2 rounded text-sm font-medium hover:bg-brand-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                New Project
+            </a>
+        </div>
+    </div>
+</div>
+@endif
+
 @if($pendingExpenseCount !== null && $pendingExpenseCount > 0)
 <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 mb-6 flex items-center justify-between">
     <div>

@@ -16,6 +16,7 @@ class AuditLog extends Model
     public const MODEL_LABELS = [
         \App\Models\Branch::class            => 'Branch',
         \App\Models\Category::class          => 'Category',
+        \App\Models\Project::class           => 'Project',
         \App\Models\Region::class            => 'State',
         \App\Models\Subcategory::class       => 'Issue Type',
         \App\Models\Vendor::class            => 'Vendor',
@@ -34,7 +35,7 @@ class AuditLog extends Model
             'branch_id' => 'Branch', 'region_id' => 'State',
             'assigned_region_id' => 'Assigned State',
             'assigned_support_type' => 'Support Type',
-            'is_management' => 'Management', 'is_active' => 'Active',
+            'is_active' => 'Active',
             'reports_to' => 'Reports To',
         ],
         \App\Models\Branch::class => [
@@ -62,6 +63,12 @@ class AuditLog extends Model
             'description' => 'Description', 'amount' => 'Amount',
             'expense_date' => 'Expense Date', 'status' => 'Status',
             'approved_by' => 'Approved By', 'rejection_reason' => 'Rejection',
+            'requested_approver_id' => 'Requested Approver',
+        ],
+        \App\Models\Project::class => [
+            'number' => 'Number', 'name' => 'Name', 'description' => 'Description',
+            'owner_id' => 'Owner', 'status' => 'Status',
+            'start_date' => 'Start Date', 'end_date' => 'End Date',
         ],
         \App\Models\WorkingHour::class => [
             'day_of_week' => 'Day', 'is_working_day' => 'Working',

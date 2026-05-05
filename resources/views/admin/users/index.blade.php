@@ -39,7 +39,7 @@
                     @else — @endif
                 </td>
                 <td class="px-4 py-3 text-xs">
-                    @if($user->is_management)<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full">MGMT</span>@endif
+                    @if($user->isManagement())<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full">MGMT</span>@endif
                 </td>
                 <td class="px-4 py-3">
                     <span class="px-2 py-0.5 rounded-full text-xs {{ $user->is_active && !$user->deleted_at ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">

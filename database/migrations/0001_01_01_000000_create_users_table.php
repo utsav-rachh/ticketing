@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['employee','resolver','admin'])->default('employee');
+            $table->enum('role', ['employee','resolver','admin','management'])->default('employee');
             $table->enum('resolver_level', ['junior','tl','it_head'])->nullable();
             $table->string('department', 100)->nullable();
             $table->unsignedBigInteger('reports_to')->nullable();
@@ -27,7 +27,6 @@ return new class extends Migration
             $table->unsignedBigInteger('region_id')->nullable();
             $table->unsignedBigInteger('assigned_region_id')->nullable();
             $table->enum('assigned_support_type', ['application','infrastructure','admin'])->nullable();
-            $table->boolean('is_management')->default(false);
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
@@ -39,7 +38,6 @@ return new class extends Migration
             $table->index('region_id');
             $table->index('assigned_region_id');
             $table->index('assigned_support_type');
-            $table->index('is_management');
             $table->foreign('reports_to')->references('id')->on('users')->nullOnDelete();
         });
 

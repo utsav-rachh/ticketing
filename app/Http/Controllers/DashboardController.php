@@ -22,16 +22,18 @@ class DashboardController extends Controller
             'red_flag' => (clone $base)->where('is_red_flag',true)->whereNotIn('status',['resolved','closed'])->count(),
         ];
 
-        // Pending expense approvals — only meaningful for IT Head / admin
+        // Pending expense approvals — only show what's routed to this user.
         $pendingExpenseCount = $user->canApproveExpenses()
-            ? TicketExpense::where('status','pending')->count()
+            ? TicketExpense::where('status','pending')
+                ->where('requested_approver_id', $user->id)
+                ->count()
             : null;
 
         // Management tickets: red-flagged or raised by management — top of dashboard.
         $managementTickets = (clone $base)
             ->where(function ($q) {
                 $q->where('is_red_flag', true)
-                  ->orWhereHas('creator', fn ($c) => $c->where('is_management', true));
+                  ->orWhereHas('creator', fn ($c) => $c->where('role', 'management'));
             })
             ->whereNotIn('status', ['closed'])
             ->with(['creator','category','subcategory','assignee','branch.region'])

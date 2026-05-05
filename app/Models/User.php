@@ -14,7 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name','email','password','role','resolver_level','department','reports_to','phone',
         'employee_id','branch_id','region_id','assigned_region_id','assigned_support_type',
-        'is_management','is_active','email_verified_at',
+        'is_active','email_verified_at',
     ];
 
     protected $hidden = ['password','remember_token'];
@@ -23,7 +23,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
         'is_active'         => 'boolean',
-        'is_management'     => 'boolean',
     ];
 
     public function supervisor()      { return $this->belongsTo(User::class, 'reports_to'); }
@@ -34,20 +33,22 @@ class User extends Authenticatable
     public function region()          { return $this->belongsTo(Region::class); }
     public function assignedRegion()  { return $this->belongsTo(Region::class, 'assigned_region_id'); }
     public function assignedRegions() { return $this->belongsToMany(Region::class, 'resolver_regions'); }
+    public function ownedProjects()   { return $this->hasMany(Project::class, 'owner_id'); }
 
     public function isEmployee(): bool   { return $this->role === 'employee'; }
     public function isResolver(): bool   { return $this->role === 'resolver'; }
     public function isAdmin(): bool      { return $this->role === 'admin'; }
-    public function isManagement(): bool { return (bool) $this->is_management; }
+    public function isManagement(): bool { return $this->role === 'management'; }
     public function isJunior(): bool     { return $this->isResolver() && $this->resolver_level === 'junior'; }
     public function isTL(): bool         { return $this->isResolver() && $this->resolver_level === 'tl'; }
     public function isITHead(): bool     { return $this->isResolver() && $this->resolver_level === 'it_head'; }
 
     public function canAssign(): bool    { return $this->isResolver() || $this->isAdmin(); }
     public function canExport(): bool    { return $this->isResolver() || $this->isAdmin(); }
-    public function canApproveExpenses(): bool { return $this->isITHead(); }
+    public function canApproveExpenses(): bool { return $this->isITHead() || $this->isAdmin() || $this->isManagement(); }
     public function canManageAdmin(): bool     { return $this->isAdmin(); }
     public function canViewAuditLogs(): bool   { return $this->isAdmin(); }
+    public function canManageProjects(): bool  { return $this->isAdmin() || $this->isITHead(); }
 
     /**
      * Branch ids this user can see tickets for, per the 3-level

@@ -11,6 +11,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'ticket_number','support_type','category_id','subcategory_id','branch_id','vendor_id','vendor_reference',
+        'project_id',
         'subject','description','custom_issue','priority','status','is_red_flag',
         'created_by','assigned_to','assigned_by',
         'employee_contact_name','employee_contact_phone','employee_contact_email','employee_contact_employee_id',
@@ -43,6 +44,7 @@ class Ticket extends Model
     public function subcategory(){ return $this->belongsTo(Subcategory::class)->withTrashed(); }
     public function branch()     { return $this->belongsTo(Branch::class)->withTrashed(); }
     public function vendor()     { return $this->belongsTo(Vendor::class)->withTrashed(); }
+    public function project()    { return $this->belongsTo(Project::class)->withTrashed(); }
     public function activities() { return $this->hasMany(TicketActivity::class)->orderBy('created_at'); }
     public function updates()    { return $this->hasMany(TicketUpdate::class)->orderBy('created_at'); }
     public function expenses()   { return $this->hasMany(TicketExpense::class); }

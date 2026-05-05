@@ -251,11 +251,68 @@
                         </select>
                     </div>
 
+                    @if($canLinkProject)
+                    {{-- Project (Admin / IT Head only) --}}
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="text-sm font-semibold text-blue-800 mb-3">Project</h3>
+                        @php
+                            $defaultMode = old('project_mode', $preselectedProjectId ? 'existing' : 'none');
+                        @endphp
+                        <div class="flex flex-wrap gap-4 mb-3 text-sm">
+                            @foreach(['none' => 'No project', 'existing' => 'Pick existing', 'new' => '+ New project'] as $val => $lbl)
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="project_mode" value="{{ $val }}" class="project-mode-radio" {{ $defaultMode === $val ? 'checked' : '' }}>
+                                <span>{{ $lbl }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+
+                        <div class="project-mode-panel project-mode-existing {{ $defaultMode === 'existing' ? '' : 'hidden' }}">
+                            <select name="project_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white">
+                                <option value="">— Select a project —</option>
+                                @foreach($projects as $p)
+                                <option value="{{ $p->id }}" {{ old('project_id', $preselectedProjectId) == $p->id ? 'selected' : '' }}>{{ $p->number }} · {{ $p->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('project_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="project-mode-panel project-mode-new {{ $defaultMode === 'new' ? '' : 'hidden' }} space-y-3">
+                            <input type="text" name="new_project_name" maxlength="200"
+                                   value="{{ old('new_project_name') }}"
+                                   placeholder="Project name"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
+                            @error('new_project_name') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+
+                            <select name="new_project_owner_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white">
+                                <option value="">— Project owner (management user) —</option>
+                                @foreach($managementOwners as $o)
+                                <option value="{{ $o->id }}" {{ old('new_project_owner_id') == $o->id ? 'selected' : '' }}>{{ $o->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('new_project_owner_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+
+                            <textarea name="new_project_description" rows="2" maxlength="5000"
+                                      placeholder="Description (optional)"
+                                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">{{ old('new_project_description') }}</textarea>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="date" name="new_project_start_date" value="{{ old('new_project_start_date') }}"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm" placeholder="Start date">
+                                <input type="date" name="new_project_end_date" value="{{ old('new_project_end_date') }}"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm" placeholder="End date">
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- 5. Attachments --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Attachments <span class="text-gray-400">(optional, max 10MB each)</span></label>
-                        <input type="file" name="attachments[]" multiple
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Attachments <span class="text-gray-400">(optional, max 10 MB total)</span></label>
+                        <input type="file" id="attachmentsInput" name="attachments[]" multiple
                                class="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                        <p id="attachmentsError" class="text-xs text-red-600 mt-1 hidden"></p>
+                        @error('attachments') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -444,5 +501,50 @@ document.addEventListener('DOMContentLoaded', () => {
         @endif
     @endif
 });
+
+// Project mode toggle (Admin/IT Head only — radios only render when allowed).
+(function () {
+    const radios = document.querySelectorAll('.project-mode-radio');
+    if (radios.length === 0) return;
+
+    function refresh() {
+        const val = document.querySelector('.project-mode-radio:checked')?.value || 'none';
+        document.querySelectorAll('.project-mode-panel').forEach(p => p.classList.add('hidden'));
+        const panel = document.querySelector('.project-mode-' + val);
+        if (panel) panel.classList.remove('hidden');
+    }
+    radios.forEach(r => r.addEventListener('change', refresh));
+    refresh();
+})();
+
+// Total-attachment-size pre-check: 10 MB across all selected files (initial create only).
+(function () {
+    const input = document.getElementById('attachmentsInput');
+    const errorEl = document.getElementById('attachmentsError');
+    const form = document.getElementById('ticketForm');
+    const MAX = 10 * 1024 * 1024;
+    if (!input || !errorEl || !form) return;
+
+    function totalSize() {
+        let bytes = 0;
+        for (const f of input.files) bytes += f.size;
+        return bytes;
+    }
+    function check() {
+        const total = totalSize();
+        if (total > MAX) {
+            const mb = (total / 1048576).toFixed(2);
+            errorEl.textContent = `Total attachments exceed 10 MB (current: ${mb} MB). Remove some files before submitting.`;
+            errorEl.classList.remove('hidden');
+            return false;
+        }
+        errorEl.classList.add('hidden');
+        return true;
+    }
+    input.addEventListener('change', check);
+    form.addEventListener('submit', (e) => {
+        if (!check()) e.preventDefault();
+    });
+})();
 </script>
 @endsection

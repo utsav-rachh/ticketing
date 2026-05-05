@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseApprovalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TicketController;
@@ -54,8 +55,14 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
 
-    // Expense approval (IT Head / Admin)
-    Route::middleware('role:resolver,admin')->prefix('expenses')->name('expenses.')->group(function () {
+    // Projects (Admin + IT Head only — gated further by ProjectPolicy)
+    Route::middleware('role:resolver,admin')->group(function () {
+        Route::resource('projects', ProjectController::class);
+    });
+
+    // Expense approval (IT Head / Admin / Management — page only shows
+    // expenses routed to the current user; per-row checks enforced inside).
+    Route::middleware('role:resolver,admin,management')->prefix('expenses')->name('expenses.')->group(function () {
         Route::get('/approvals', [ExpenseApprovalController::class, 'index'])->name('approvals');
         Route::post('/{expense}/approve', [ExpenseApprovalController::class, 'approve'])->name('approve');
         Route::post('/{expense}/reject',  [ExpenseApprovalController::class, 'reject'])->name('reject');

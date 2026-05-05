@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Category;
+use App\Models\Project;
 use App\Models\Region;
 use App\Models\Subcategory;
 use App\Models\TatConfiguration;
@@ -20,6 +21,7 @@ use App\Notifications\TicketStatusNotification;
 use App\Services\TatCalculator;
 use App\Services\TicketAssignmentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class TicketController extends Controller
@@ -40,6 +42,9 @@ class TicketController extends Controller
 
     /** Allowed extension whitelist for resolver attachments. */
     private const ATTACHMENT_MIMES = 'xlsx,xls,docx,doc,pdf,png,jpg,jpeg';
+
+    /** Total attachment size cap (bytes) for initial ticket creation only. */
+    private const CREATE_ATTACHMENT_TOTAL_BYTES = 10 * 1024 * 1024;
 
     public function index(Request $request)
     {
@@ -93,18 +98,35 @@ class TicketController extends Controller
         return view('tickets.index', compact('tickets', 'sort', 'dir'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::active()->orderBy('support_type')->orderBy('sort_order')->get();
         $vendors    = Vendor::active()->orderBy('name')->get();
         $branches   = Branch::active()->with('region')->orderBy('name')->get();
         $regions    = Region::active()->orderBy('name')->get();
-        return view('tickets.create', compact('categories','vendors','branches','regions'));
+
+        $canLinkProject = $request->user()->can('linkProject', Ticket::class);
+        $projects = $canLinkProject
+            ? Project::whereIn('status', ['active','on_hold'])->orderBy('name')->get(['id','number','name'])
+            : collect();
+        $managementOwners = $canLinkProject
+            ? User::where('role', 'management')->where('is_active', true)->orderBy('name')->get(['id','name'])
+            : collect();
+
+        $preselectedProjectId = $canLinkProject ? $request->integer('project_id') : null;
+
+        return view('tickets.create', compact(
+            'categories','vendors','branches','regions',
+            'canLinkProject','projects','managementOwners','preselectedProjectId'
+        ));
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $user           = $request->user();
+        $canLinkProject = $user->can('linkProject', Ticket::class);
+
+        $rules = [
             'support_type'   => 'required|in:application,infrastructure,admin',
             'category_id'    => 'required|exists:categories,id',
             'subcategory_id' => 'required|exists:subcategories,id',
@@ -118,18 +140,54 @@ class TicketController extends Controller
             'employee_contact_name'        => 'required|string|max:150',
             'employee_contact_phone'       => 'required|string|max:20',
             'employee_contact_email'       => 'nullable|email|max:150',
-            'attachments.*'  => 'nullable|file|max:10240|mimes:' . self::ATTACHMENT_MIMES,
-        ]);
+            'attachments'    => 'nullable|array',
+            'attachments.*'  => 'file|mimes:' . self::ATTACHMENT_MIMES,
+        ];
 
-        $user = $request->user();
+        if ($canLinkProject) {
+            $rules['project_mode']            = 'nullable|in:none,existing,new';
+            $rules['project_id']              = 'nullable|exists:projects,id';
+            $rules['new_project_name']        = 'nullable|string|max:200';
+            $rules['new_project_owner_id']    = 'nullable|exists:users,id';
+            $rules['new_project_description'] = 'nullable|string|max:5000';
+            $rules['new_project_start_date']  = 'nullable|date';
+            $rules['new_project_end_date']    = 'nullable|date|after_or_equal:new_project_start_date';
+        }
+
+        $data = $request->validate($rules);
+
+        // Total-size cap on initial-create attachments (10 MB across all files).
+        if ($request->hasFile('attachments')) {
+            $total = 0;
+            foreach ((array) $request->file('attachments') as $file) {
+                if ($file) $total += (int) $file->getSize();
+            }
+            if ($total > self::CREATE_ATTACHMENT_TOTAL_BYTES) {
+                $mb = number_format($total / 1048576, 2);
+                return back()->withErrors([
+                    'attachments' => "Total attachments exceed 10 MB (current: {$mb} MB).",
+                ])->withInput();
+            }
+        }
+
         $subcategory = Subcategory::findOrFail($data['subcategory_id']);
 
         if (strcasecmp($subcategory->name, 'Others') === 0 && empty($data['custom_issue'])) {
             return back()->withErrors(['custom_issue' => 'Describe the issue when choosing "Others".'])->withInput();
         }
 
+        // If the user is creating a brand-new project inline, both name and owner are required.
+        if ($canLinkProject && ($data['project_mode'] ?? 'none') === 'new') {
+            $missing = [];
+            if (empty($data['new_project_name']))     $missing['new_project_name'] = 'New project name is required.';
+            if (empty($data['new_project_owner_id'])) $missing['new_project_owner_id'] = 'New project owner is required.';
+            if (!empty($missing)) {
+                return back()->withErrors($missing)->withInput();
+            }
+        }
+
         // Priority is derived server-side, never from user input.
-        $isManagement = (bool) $user->is_management;
+        $isManagement = $user->isManagement();
         $priority     = $isManagement ? 'critical' : ($subcategory->default_priority ?: 'medium');
 
         $branchId = $data['branch_id'] ?? $user->branch_id;
@@ -138,51 +196,77 @@ class TicketController extends Controller
         $tat      = app(TatCalculator::class);
         $deadline = $tat->deadlineForStatus('open', $now);
 
-        $ticket = Ticket::create([
-            'ticket_number'  => Ticket::generateTicketNumber(),
-            'support_type'   => $data['support_type'],
-            'category_id'    => $data['category_id'],
-            'subcategory_id' => $data['subcategory_id'],
-            'branch_id'      => $branchId,
-            'vendor_id'      => $data['support_type'] === 'infrastructure' ? ($data['vendor_id'] ?? null) : null,
-            'subject'        => $data['subject'],
-            'description'    => $data['description'] ?? null,
-            'custom_issue'   => $data['custom_issue'] ?? null,
-            'priority'       => $priority,
-            'is_red_flag'    => $isManagement,
-            'status'         => 'open',
-            'created_by'     => $user->id,
-            'employee_contact_name'        => $data['employee_contact_name']  ?? $user->name,
-            'employee_contact_phone'       => $data['employee_contact_phone'] ?? $user->phone,
-            'employee_contact_email'       => $data['employee_contact_email'] ?? $user->email,
-            'employee_contact_employee_id' => $data['employee_contact_employee_id'] ?? $user->employee_id,
-            'status_entered_at'   => $now,
-            'status_tat_deadline' => $deadline,
-            // Legacy columns kept populated for older readers.
-            'tat_hours'      => optional(TatConfiguration::forStatus('open'))->tat_hours ?? 0,
-            'tat_deadline'   => $deadline ?: $now,
-        ]);
-
-        if ($request->hasFile('attachments')) {
-            foreach ((array) $request->file('attachments') as $file) {
-                if (!$file) continue;
-                $path = $file->store('attachments/' . $ticket->id, 'public');
-                TicketAttachment::create([
-                    'ticket_id'   => $ticket->id,
-                    'uploaded_by' => $user->id,
-                    'file_name'   => $file->getClientOriginalName(),
-                    'file_path'   => $path,
-                    'file_size'   => $file->getSize(),
-                    'mime_type'   => $file->getMimeType(),
-                ]);
+        $ticket = DB::transaction(function () use ($data, $user, $canLinkProject, $branchId, $priority, $isManagement, $now, $deadline, $request) {
+            // Resolve project_id atomically (existing pick or inline-create new).
+            $projectId = null;
+            if ($canLinkProject) {
+                $mode = $data['project_mode'] ?? 'none';
+                if ($mode === 'existing' && !empty($data['project_id'])) {
+                    $projectId = (int) $data['project_id'];
+                } elseif ($mode === 'new') {
+                    $project = Project::create([
+                        'number'      => Project::generateNumber(),
+                        'name'        => $data['new_project_name'],
+                        'description' => $data['new_project_description'] ?? null,
+                        'owner_id'    => $data['new_project_owner_id'],
+                        'status'      => 'active',
+                        'start_date'  => $data['new_project_start_date'] ?? null,
+                        'end_date'    => $data['new_project_end_date']   ?? null,
+                        'created_by'  => $user->id,
+                    ]);
+                    $projectId = $project->id;
+                }
             }
-        }
+
+            $ticket = Ticket::create([
+                'ticket_number'  => Ticket::generateTicketNumber(),
+                'support_type'   => $data['support_type'],
+                'category_id'    => $data['category_id'],
+                'subcategory_id' => $data['subcategory_id'],
+                'branch_id'      => $branchId,
+                'vendor_id'      => $data['support_type'] === 'infrastructure' ? ($data['vendor_id'] ?? null) : null,
+                'project_id'     => $projectId,
+                'subject'        => $data['subject'],
+                'description'    => $data['description'] ?? null,
+                'custom_issue'   => $data['custom_issue'] ?? null,
+                'priority'       => $priority,
+                'is_red_flag'    => $isManagement,
+                'status'         => 'open',
+                'created_by'     => $user->id,
+                'employee_contact_name'        => $data['employee_contact_name']  ?? $user->name,
+                'employee_contact_phone'       => $data['employee_contact_phone'] ?? $user->phone,
+                'employee_contact_email'       => $data['employee_contact_email'] ?? $user->email,
+                'employee_contact_employee_id' => $data['employee_contact_employee_id'] ?? $user->employee_id,
+                'status_entered_at'   => $now,
+                'status_tat_deadline' => $deadline,
+                'tat_hours'      => optional(TatConfiguration::forStatus('open'))->tat_hours ?? 0,
+                'tat_deadline'   => $deadline ?: $now,
+            ]);
+
+            if ($request->hasFile('attachments')) {
+                foreach ((array) $request->file('attachments') as $file) {
+                    if (!$file) continue;
+                    $path = $file->store('attachments/' . $ticket->id, 'public');
+                    TicketAttachment::create([
+                        'ticket_id'   => $ticket->id,
+                        'uploaded_by' => $user->id,
+                        'file_name'   => $file->getClientOriginalName(),
+                        'file_path'   => $path,
+                        'file_size'   => $file->getSize(),
+                        'mime_type'   => $file->getMimeType(),
+                    ]);
+                }
+            }
+
+            return $ticket;
+        });
 
         TicketActivity::create([
             'ticket_id'   => $ticket->id,
             'user_id'     => $user->id,
             'action_type' => 'created',
-            'description' => 'Ticket created by ' . $user->name,
+            'description' => 'Ticket created by ' . $user->name
+                . ($ticket->project_id ? ' (project ' . optional($ticket->project)->number . ')' : ''),
         ]);
 
         // Auto-assign based on region + support_type
@@ -214,10 +298,17 @@ class TicketController extends Controller
     {
         $this->authorize('view', $ticket);
         $ticket->load([
-            'creator','category','subcategory','assignee','branch.region','vendor',
+            'creator','category','subcategory','assignee','branch.region','vendor','project',
             'activities.user','updates.user','updates.attachments',
-            'expenses.addedBy','expenses.approvedBy','attachments.uploader',
+            'expenses.addedBy','expenses.approvedBy','expenses.requestedApprover','attachments.uploader',
         ]);
+
+        // Approver picker pool for project-linked tickets (management + IT Head + project owner).
+        $expenseApprovers = $ticket->project_id
+            ? User::whereIn('id', $this->projectExpenseApproverIds($ticket))
+                ->orderBy('name')
+                ->get(['id','name','role'])
+            : collect();
 
         // Unified timeline: newest first
         $timeline = collect()
@@ -241,7 +332,7 @@ class TicketController extends Controller
 
         $allowedNextStatuses = self::ALLOWED_TRANSITIONS[$ticket->status] ?? [];
 
-        return view('tickets.show', compact('ticket', 'timeline', 'initialAttachments', 'allowedNextStatuses'));
+        return view('tickets.show', compact('ticket', 'timeline', 'initialAttachments', 'allowedNextStatuses', 'expenseApprovers'));
     }
 
     /**
@@ -467,23 +558,44 @@ class TicketController extends Controller
     public function addExpense(Request $request, Ticket $ticket)
     {
         $this->authorize('addExpense', $ticket);
-        $data = $request->validate([
+
+        $rules = [
             'description'  => 'required|string|max:500',
             'amount'       => 'required|numeric|min:0',
             'expense_date' => 'required|date',
             'invoice'      => 'required|file|max:10240',
-        ]);
+        ];
+
+        // For project-linked tickets, the submitter chooses the approver from
+        // the allowed pool: management users + IT Head + project owner.
+        if ($ticket->project_id) {
+            $allowedApproverIds = $this->projectExpenseApproverIds($ticket->load('project'));
+            $rules['requested_approver_id'] = ['required', 'integer', \Illuminate\Validation\Rule::in($allowedApproverIds)];
+        }
+
+        $data = $request->validate($rules);
+
+        // Resolve approver: project picker for project tickets, default IT Head otherwise.
+        if ($ticket->project_id) {
+            $approverId = (int) $data['requested_approver_id'];
+        } else {
+            $approverId = User::where('role','resolver')
+                ->where('resolver_level','it_head')
+                ->where('is_active', true)
+                ->value('id');
+        }
 
         $path = $request->file('invoice')->store('expenses/' . $ticket->id, 'public');
 
         $expense = TicketExpense::create([
-            'ticket_id'    => $ticket->id,
-            'added_by'     => $request->user()->id,
-            'description'  => $data['description'],
-            'amount'       => $data['amount'],
-            'expense_date' => $data['expense_date'],
-            'invoice_path' => $path,
-            'status'       => 'pending',
+            'ticket_id'             => $ticket->id,
+            'added_by'              => $request->user()->id,
+            'requested_approver_id' => $approverId,
+            'description'           => $data['description'],
+            'amount'                => $data['amount'],
+            'expense_date'          => $data['expense_date'],
+            'invoice_path'          => $path,
+            'status'                => 'pending',
         ]);
 
         TicketActivity::create([
@@ -493,13 +605,34 @@ class TicketController extends Controller
             'description' => 'Expense submitted for approval: ₹' . number_format($data['amount'], 2),
         ]);
 
-        // Notify IT Head(s)
-        $approvers = User::where('role','resolver')
-            ->where('resolver_level','it_head')
-            ->where('is_active', true)->get();
-        Notification::send($approvers, new ExpenseSubmittedNotification($expense));
+        // Notify the requested approver (IT Head fallback for non-project tickets).
+        if ($approverId && ($approver = User::find($approverId))) {
+            $approver->notify(new ExpenseSubmittedNotification($expense));
+        }
 
         return back()->with('success', 'Expense submitted for approval.');
+    }
+
+    /**
+     * Allowed approvers for an expense on a project-linked ticket:
+     * all management users + IT Head + project owner (deduped, active only).
+     *
+     * @return int[]
+     */
+    private function projectExpenseApproverIds(Ticket $ticket): array
+    {
+        return User::where('is_active', true)
+            ->where(function ($q) use ($ticket) {
+                $q->where('role', 'management')
+                  ->orWhere(fn ($qq) => $qq->where('role','resolver')->where('resolver_level','it_head'));
+                if ($ticket->project && $ticket->project->owner_id) {
+                    $q->orWhere('id', $ticket->project->owner_id);
+                }
+            })
+            ->pluck('id')
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function addAttachment(Request $request, Ticket $ticket)

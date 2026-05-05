@@ -35,7 +35,6 @@ class UserSeeder extends Seeder
             'department'     => 'IT',
             'employee_id'    => '11362',
             'phone'          => '1234561234',
-            'is_management'  => true, // CISO — also files critical management tickets
             'branch_id'      => $puneCorp?->id,
             'region_id'      => $regions['ST-MH'] ?? null,
         ]);
@@ -141,7 +140,6 @@ class UserSeeder extends Seeder
         }
 
         // ─── Management users (auto-critical, auto-flagged on create) ─
-        // Yogesh already created above with is_management=true.
         $management = [
             [
                 'name'        => 'Hari Shankar Reddy',
@@ -217,11 +215,10 @@ class UserSeeder extends Seeder
                 'name'           => $m['name'],
                 'email'          => $m['email'],
                 'password'       => 'mgmt@123',
-                'role'           => 'employee',
+                'role'           => 'management',
                 'department'     => $m['department'],
                 'employee_id'    => $m['employee_id'],
                 'phone'          => $m['phone'],
-                'is_management'  => true,
                 'branch_id'      => $branchId,
                 'region_id'      => $regions[$regionCode] ?? null,
             ]);

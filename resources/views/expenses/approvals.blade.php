@@ -22,6 +22,7 @@
                 <th class="px-4 py-3 text-left">Amount</th>
                 <th class="px-4 py-3 text-left">Date</th>
                 <th class="px-4 py-3 text-left">Submitted by</th>
+                <th class="px-4 py-3 text-left">Approver</th>
                 <th class="px-4 py-3 text-left">Invoice</th>
                 <th class="px-4 py-3"></th>
             </tr>
@@ -36,6 +37,7 @@
                 <td class="px-4 py-3 font-semibold">&#8377;{{ number_format($exp->amount, 2) }}</td>
                 <td class="px-4 py-3 text-xs text-gray-500">{{ $exp->expense_date?->format('d M Y') }}</td>
                 <td class="px-4 py-3 text-xs text-gray-600">{{ $exp->addedBy->name ?? '—' }}</td>
+                <td class="px-4 py-3 text-xs text-gray-600">{{ $exp->requestedApprover->name ?? '—' }}</td>
                 <td class="px-4 py-3 text-xs">
                     @if($exp->invoice_path)
                     <a href="{{ Storage::url($exp->invoice_path) }}" target="_blank" class="text-brand-600 hover:underline">view</a>
@@ -62,7 +64,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">No {{ $status }} expenses.</td></tr>
+            <tr><td colspan="8" class="px-6 py-8 text-center text-gray-400">No {{ $status }} expenses routed to you.</td></tr>
             @endforelse
         </tbody>
     </table>

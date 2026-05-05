@@ -65,6 +65,13 @@
 
             @if($user->isResolver() || $user->isAdmin())
             <div class="section-label mt-4 px-6 py-1 text-xs text-gold-400/60 uppercase tracking-wider font-semibold">Work</div>
+            @if($user->canManageProjects())
+            <a href="{{ route('projects.index') }}" title="Projects"
+               class="sidebar-link flex items-center gap-3 px-6 py-2.5 text-sm hover:bg-white/10 {{ request()->routeIs('projects.*') ? 'bg-white/10 text-white border-r-2 border-gold-400' : 'text-gray-300' }}">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                <span class="sidebar-label">Projects</span>
+            </a>
+            @endif
             <a href="{{ route('team.index') }}" title="Team"
                class="sidebar-link flex items-center gap-3 px-6 py-2.5 text-sm hover:bg-white/10 {{ request()->routeIs('team.*') ? 'bg-white/10 text-white border-r-2 border-gold-400' : 'text-gray-300' }}">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>

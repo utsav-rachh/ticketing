@@ -28,10 +28,11 @@
     <label class="block">
         <span class="text-xs font-medium text-gray-500">Role</span>
         <select name="role" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
-            @foreach(['employee','resolver','admin'] as $r)
+            @foreach(['employee','resolver','admin','management'] as $r)
             <option value="{{ $r }}" {{ old('role', $user->role ?? '') === $r ? 'selected' : '' }}>{{ ucfirst($r) }}</option>
             @endforeach
         </select>
+        <p class="text-[11px] text-gray-500 mt-1">Management users' tickets are auto red-flagged and critical.</p>
     </label>
     <label class="block">
         <span class="text-xs font-medium text-gray-500">Resolver Level (resolver only)</span>
@@ -95,11 +96,6 @@
             <option value="{{ $t }}" {{ old('assigned_support_type', $user->assigned_support_type ?? '') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}</option>
             @endforeach
         </select>
-    </label>
-    <label class="flex items-center gap-2 md:col-span-2">
-        <input type="hidden" name="is_management" value="0">
-        <input type="checkbox" name="is_management" value="1" {{ old('is_management', $user->is_management ?? false) ? 'checked' : '' }}>
-        <span class="text-sm text-gray-600">Management / MD (tickets are auto red-flagged and critical)</span>
     </label>
     <label class="flex items-center gap-2 md:col-span-2">
         <input type="hidden" name="is_active" value="0">

@@ -91,6 +91,15 @@ class TicketPolicy
     }
 
     /**
+     * Linking tickets to projects (and creating a new project inline) is
+     * an Admin / IT Head only action.
+     */
+    public function linkProject(User $user): bool
+    {
+        return $user->canManageProjects();
+    }
+
+    /**
      * Only the ticket creator can reopen a resolved ticket — and only when
      * it is currently in the resolved state.
      */

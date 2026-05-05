@@ -24,7 +24,6 @@ return new class extends Migration {
             if (!Schema::hasColumn('users', 'region_id'))              $table->unsignedBigInteger('region_id')->nullable()->after('branch_id');
             if (!Schema::hasColumn('users', 'assigned_region_id'))     $table->unsignedBigInteger('assigned_region_id')->nullable()->after('region_id');
             if (!Schema::hasColumn('users', 'assigned_support_type'))  $table->string('assigned_support_type', 20)->nullable()->after('assigned_region_id');
-            if (!Schema::hasColumn('users', 'is_management'))          $table->boolean('is_management')->default(false)->after('assigned_support_type');
         });
 
         // ---- tickets ----
@@ -63,7 +62,7 @@ return new class extends Migration {
         });
         Schema::table('users', function (Blueprint $table) {
             foreach ([
-                'is_management','assigned_support_type','assigned_region_id',
+                'assigned_support_type','assigned_region_id',
                 'region_id','branch_id','employee_id','resolver_level',
             ] as $col) {
                 if (Schema::hasColumn('users', $col)) $table->dropColumn($col);

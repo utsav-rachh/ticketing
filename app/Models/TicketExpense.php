@@ -9,7 +9,7 @@ class TicketExpense extends Model
     use Auditable;
 
     protected $fillable = [
-        'ticket_id','added_by','description','amount','expense_date','invoice_path',
+        'ticket_id','added_by','requested_approver_id','description','amount','expense_date','invoice_path',
         'status','approved_by','approved_at','rejection_reason',
     ];
 
@@ -22,6 +22,7 @@ class TicketExpense extends Model
     public function ticket()    { return $this->belongsTo(Ticket::class); }
     public function addedBy()   { return $this->belongsTo(User::class, 'added_by'); }
     public function approvedBy(){ return $this->belongsTo(User::class, 'approved_by'); }
+    public function requestedApprover() { return $this->belongsTo(User::class, 'requested_approver_id'); }
 
     public function scopeApproved($q) { return $q->where('status', 'approved'); }
     public function scopePending($q)  { return $q->where('status', 'pending'); }

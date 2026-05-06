@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Edit Project')
 @section('content')
-<div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
+<div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-4 md:p-6">
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-gray-700">Edit Project · {{ $project->number }}</h2>
         <form method="POST" action="{{ route('projects.destroy', $project) }}" onsubmit="return confirm('Archive this project? Linked tickets will keep their reference.');">

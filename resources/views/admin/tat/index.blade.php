@@ -1,12 +1,13 @@
 @extends('layouts.app')
 @section('title', 'TAT Configuration')
 @section('content')
-<div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-gray-700">TAT Configuration</h2>
+<div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">TAT Configuration</h2>
     <span class="text-xs text-gray-500">SLA budgets are per-status and burn only during working hours.</span>
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
@@ -79,5 +80,6 @@
             @endforelse
         </tbody>
     </table>
+    </div>
 </div>
 @endsection

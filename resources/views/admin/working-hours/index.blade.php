@@ -1,14 +1,15 @@
 @extends('layouts.app')
 @section('title', 'Working Hours')
 @section('content')
-<div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-gray-700">Working Hours</h2>
+<div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">Working Hours</h2>
     <span class="text-xs text-gray-500">Used by TAT to pause SLA clocks outside business hours.</span>
 </div>
 
 <form method="POST" action="{{ route('admin.working-hours.update') }}" class="bg-white rounded-lg shadow overflow-hidden">
     @csrf
     @method('PATCH')
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
@@ -46,8 +47,9 @@
             @endforeach
         </tbody>
     </table>
+    </div>
     <div class="px-4 py-3 border-t bg-gray-50 text-right">
-        <button type="submit" class="text-white px-4 py-2 rounded text-sm" style="background:#0056B3;">Save Working Hours</button>
+        <button type="submit" class="text-white px-4 py-2 rounded text-sm btn-touch w-full sm:w-auto" style="background:#0056B3;">Save Working Hours</button>
     </div>
 </form>
 @endsection

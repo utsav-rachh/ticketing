@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $vendor->exists ? 'Edit Vendor' : 'New Vendor')
 @section('content')
-<div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-4 md:p-6">
     <h2 class="text-lg font-bold text-gray-700 mb-4">{{ $vendor->exists ? 'Edit Vendor' : 'New Vendor' }}</h2>
     <form method="POST" action="{{ $vendor->exists ? route('admin.vendors.update', $vendor) : route('admin.vendors.store') }}" enctype="multipart/form-data">
         @csrf

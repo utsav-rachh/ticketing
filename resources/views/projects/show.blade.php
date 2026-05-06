@@ -2,15 +2,15 @@
 @section('title', $project->number . ' · ' . $project->name)
 @section('content')
 <div class="max-w-6xl mx-auto">
-    <div class="flex items-start justify-between mb-4">
-        <div>
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+        <div class="min-w-0">
             <div class="text-xs text-gray-500 font-mono">{{ $project->number }}</div>
-            <h2 class="text-xl font-bold text-gray-800">{{ $project->name }}</h2>
+            <h2 class="text-lg md:text-xl font-bold text-gray-800 break-words">{{ $project->name }}</h2>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('tickets.create', ['project_id' => $project->id]) }}"
-               class="text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">+ Create ticket in this project</a>
-            <a href="{{ route('projects.edit', $project) }}" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm">Edit</a>
+               class="text-white px-3 md:px-4 py-2 rounded text-sm font-medium btn-touch flex-1 md:flex-none text-center" style="background:#0056B3;">+ Create ticket</a>
+            <a href="{{ route('projects.edit', $project) }}" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm btn-touch text-center">Edit</a>
         </div>
     </div>
 
@@ -47,7 +47,8 @@
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-4 py-3 border-b text-sm font-semibold text-gray-700">Tickets ({{ $tickets->total() }})</div>
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm" data-mobile="cards">
             <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
                     <th class="px-4 py-3 text-left">Number</th>
@@ -79,6 +80,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div class="px-4 py-3 border-t">{{ $tickets->links() }}</div>
     </div>
 </div>

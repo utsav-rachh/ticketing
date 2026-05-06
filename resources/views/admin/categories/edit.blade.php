@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $category->exists ? 'Edit Category' : 'New Category')
 @section('content')
-<div class="max-w-xl mx-auto bg-white rounded-lg shadow p-6">
+<div class="max-w-xl mx-auto bg-white rounded-lg shadow p-4 md:p-6">
     <h2 class="text-lg font-bold text-gray-700 mb-4">{{ $category->exists ? 'Edit Category' : 'New Category' }}</h2>
     <form method="POST" action="{{ $category->exists ? route('admin.categories.update', $category) : route('admin.categories.store') }}">
         @csrf

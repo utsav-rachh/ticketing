@@ -2,8 +2,8 @@
 @section('title', 'Notifications')
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-700">Notifications</h2>
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h2 class="text-lg md:text-xl font-bold text-gray-700">Notifications</h2>
         <form method="POST" action="{{ route('notifications.readAll') }}">
             @csrf
             <button type="submit" class="text-sm text-brand-500 hover:underline">Mark all as read</button>

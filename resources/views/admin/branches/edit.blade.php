@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $branch->exists ? 'Edit Branch' : 'New Branch')
 @section('content')
-<div class="max-w-xl mx-auto bg-white rounded-lg shadow p-6">
+<div class="max-w-xl mx-auto bg-white rounded-lg shadow p-4 md:p-6">
     <h2 class="text-lg font-bold text-gray-700 mb-4">{{ $branch->exists ? 'Edit Branch' : 'New Branch' }}</h2>
     <form method="POST" action="{{ $branch->exists ? route('admin.branches.update', $branch) : route('admin.branches.store') }}">
         @csrf

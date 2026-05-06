@@ -4,25 +4,25 @@
 <div class="max-w-3xl mx-auto">
 
     <!-- Progress Steps -->
-    <div class="flex items-center justify-between mb-8 px-4">
+    <div class="flex items-center justify-between mb-6 md:mb-8 px-1 md:px-4">
         <div class="flex items-center w-full" id="stepIndicator">
             <div class="flex flex-col items-center flex-1">
-                <div id="stepDot1" class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-brand-500 text-white shadow-md">1</div>
+                <div id="stepDot1" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-brand-500 text-white shadow-md">1</div>
                 <span class="text-xs mt-1.5 font-medium text-brand-600">Support Type</span>
             </div>
             <div id="stepLine1" class="flex-1 h-0.5 bg-gray-200 -mt-4 mx-1 transition-all duration-500"></div>
             <div class="flex flex-col items-center flex-1">
-                <div id="stepDot2" class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400">2</div>
+                <div id="stepDot2" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400">2</div>
                 <span class="text-xs mt-1.5 font-medium text-gray-400" id="stepLabel2">Category</span>
             </div>
             <div id="stepLine2" class="flex-1 h-0.5 bg-gray-200 -mt-4 mx-1 transition-all duration-500"></div>
             <div class="flex flex-col items-center flex-1">
-                <div id="stepDot3" class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400">3</div>
+                <div id="stepDot3" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400">3</div>
                 <span class="text-xs mt-1.5 font-medium text-gray-400" id="stepLabel3">Issue Type</span>
             </div>
             <div id="stepLine3" class="flex-1 h-0.5 bg-gray-200 -mt-4 mx-1 transition-all duration-500"></div>
             <div class="flex flex-col items-center flex-1">
-                <div id="stepDot4" class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400">4</div>
+                <div id="stepDot4" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400">4</div>
                 <span class="text-xs mt-1.5 font-medium text-gray-400" id="stepLabel4">Details</span>
             </div>
         </div>
@@ -33,7 +33,7 @@
 
         <!-- Step 1: Support Type -->
         <div id="step1" class="step-panel">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-8">
                 <h2 class="text-lg font-bold text-gray-800 mb-1">What do you need help with?</h2>
                 <p class="text-sm text-gray-500 mb-6">Choose the type of support you require</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -52,7 +52,7 @@
 
         <!-- Step 2: Category -->
         <div id="step2" class="step-panel hidden">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h2 class="text-lg font-bold text-gray-800 mb-1">Select a category</h2>
@@ -78,7 +78,7 @@
 
         <!-- Step 3: Issue Type (priority is derived; no user selector) -->
         <div id="step3" class="step-panel hidden">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h2 class="text-lg font-bold text-gray-800 mb-1">What's the issue?</h2>
@@ -119,7 +119,7 @@
 
         <!-- Step 4: Details -->
         <div id="step4" class="step-panel hidden">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
                         <h2 class="text-lg font-bold text-gray-800 mb-1">Describe the issue</h2>
@@ -316,11 +316,11 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100">
-                    <button type="submit" class="text-white px-8 py-3 rounded-lg text-sm font-semibold transition-all hover:shadow-lg" style="background: #0056B3;">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-100">
+                    <button type="submit" class="text-white px-8 py-3 rounded-lg text-sm font-semibold transition-all hover:shadow-lg btn-touch" style="background: #0056B3;">
                         Submit Ticket
                     </button>
-                    <a href="{{ route('tickets.index') }}" class="bg-gray-100 text-gray-600 px-6 py-3 rounded-lg hover:bg-gray-200 text-sm font-medium">Cancel</a>
+                    <a href="{{ route('tickets.index') }}" class="text-center bg-gray-100 text-gray-600 px-6 py-3 rounded-lg hover:bg-gray-200 text-sm font-medium btn-touch">Cancel</a>
                 </div>
             </div>
         </div>
@@ -359,15 +359,15 @@ function goToStep(step) {
         const line = document.getElementById('stepLine' + (i - 1));
 
         if (i < step) {
-            dot.className = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-green-500 text-white shadow-md';
-            dot.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
+            dot.className = 'w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-green-500 text-white shadow-md';
+            dot.innerHTML = '<svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>';
             if (label) label.className = 'text-xs mt-1.5 font-medium text-green-600';
         } else if (i === step) {
-            dot.className = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-brand-500 text-white shadow-md';
+            dot.className = 'w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-brand-500 text-white shadow-md';
             dot.textContent = i;
             if (label) label.className = 'text-xs mt-1.5 font-medium text-brand-600';
         } else {
-            dot.className = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400';
+            dot.className = 'w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 bg-gray-200 text-gray-400';
             dot.textContent = i;
             if (label) label.className = 'text-xs mt-1.5 font-medium text-gray-400';
         }

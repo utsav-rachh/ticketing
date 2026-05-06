@@ -3,14 +3,14 @@
 @section('content')
 <a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
 
-<div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-gray-700">TAT Compliance</h2>
+<div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">TAT Compliance</h2>
     <a href="{{ route('reports.tat', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
-       class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600">Export Excel</a>
+       class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600 btn-touch">Export Excel</a>
 </div>
 
-<form method="GET" class="bg-white shadow rounded p-3 flex items-end gap-3 mb-6">
-    <label class="block flex-1 max-w-xs">
+<form method="GET" class="bg-white shadow rounded p-3 flex flex-wrap items-end gap-3 mb-6">
+    <label class="block flex-1 min-w-[12rem] max-w-xs">
         <span class="text-xs font-medium text-gray-500">State</span>
         <select name="region_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             <option value="">— all states —</option>
@@ -19,11 +19,11 @@
             @endforeach
         </select>
     </label>
-    <button class="text-white px-4 py-2 rounded text-sm" style="background:#0056B3;">Apply</button>
-    <a href="{{ route('reports.tat') }}" class="bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm">Clear</a>
+    <button class="text-white px-4 py-2 rounded text-sm btn-touch" style="background:#0056B3;">Apply</button>
+    <a href="{{ route('reports.tat') }}" class="bg-gray-100 text-gray-600 px-3 py-2 rounded text-sm btn-touch">Clear</a>
 </form>
 
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
         <div class="text-2xl font-bold">{{ $total }}</div><div class="text-sm text-gray-500">Total Tickets</div>
     </div>
@@ -35,8 +35,9 @@
     </div>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <div class="px-6 py-3 border-b text-sm font-semibold text-gray-700">By Priority</div>
-    <table class="w-full text-sm">
+    <div class="px-4 md:px-6 py-3 border-b text-sm font-semibold text-gray-700">By Priority</div>
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm" data-mobile="cards">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr><th class="px-4 py-3 text-left">Priority</th><th class="px-4 py-3 text-right">Total</th><th class="px-4 py-3 text-right">Violated</th><th class="px-4 py-3 text-right">Compliance %</th></tr>
         </thead>
@@ -53,5 +54,6 @@
             @endforelse
         </tbody>
     </table>
+    </div>
 </div>
 @endsection

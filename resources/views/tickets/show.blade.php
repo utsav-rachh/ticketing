@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('title', $ticket->ticket_number)
 @section('content')
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
     <!-- Main -->
-    <div class="lg:col-span-2 space-y-6">
+    <div class="lg:col-span-2 space-y-4 md:space-y-6">
 
         @if($ticket->is_red_flag)
         <div class="flex items-center gap-3 bg-red-50 border-2 border-red-300 text-red-800 rounded-lg p-4">
@@ -28,9 +28,9 @@
         @endcan
 
         <!-- Header -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-start justify-between gap-3">
-                <div>
+        <div class="bg-white rounded-lg shadow p-4 md:p-6">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                <div class="min-w-0">
                     <div class="flex items-center gap-2 mb-2 flex-wrap">
                         <span class="font-mono text-sm text-gray-500">{{ $ticket->ticket_number }}</span>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold
@@ -61,10 +61,10 @@
                     </p>
                     @endif
                 </div>
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-row md:flex-col gap-2 flex-wrap md:flex-nowrap md:flex-shrink-0">
                     @if(auth()->user()->canExport())
                     <a href="{{ route('tickets.pdf', $ticket) }}"
-                       class="text-xs px-3 py-1.5 rounded inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                       class="text-xs px-3 py-1.5 rounded inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 btn-touch">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l4 4h4a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                         Export PDF
                     </a>
@@ -103,7 +103,7 @@
         </div>
 
         <!-- Unified Timeline -->
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4 md:p-6">
             <h3 class="font-semibold text-gray-700 mb-4">Activity Timeline</h3>
 
             @if($ticket->isClosed())
@@ -233,7 +233,7 @@
 
         <!-- Expenses (infrastructure + admin only) -->
         @if($ticket->support_type !== 'application')
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-4 md:p-6">
             <h3 class="font-semibold text-gray-700 mb-4">Expenses</h3>
             @forelse($ticket->expenses as $exp)
             <div class="flex justify-between items-center text-sm py-2 border-b last:border-0">
@@ -279,7 +279,7 @@
                 @else
                 <input type="file" name="invoice" required class="text-sm text-gray-500 md:col-span-3">
                 @endif
-                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">Submit for approval</button>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 md:col-span-4 btn-touch">Submit for approval</button>
             </form>
             @if($ticket->project_id)
             <p class="text-[11px] text-gray-500 mt-1">Approver list: project owner, all management users, and IT Head.</p>
@@ -292,7 +292,7 @@
     </div>
 
     <!-- Sidebar -->
-    <div class="space-y-6">
+    <div class="space-y-4 md:space-y-6">
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="font-semibold text-gray-700 mb-3 text-sm">Ticket Details</h3>
             <dl class="space-y-2 text-sm">

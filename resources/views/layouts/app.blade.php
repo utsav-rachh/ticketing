@@ -2,20 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#002E52">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'Ticketing') }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/altumcredo_logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/altumcredo_logo.png') }}">
     <title>{{ config('app.name') }} — @yield('title', 'Dashboard')</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>
-        /* Collapsible sidebar */
-        aside.sidebar { transition: width 180ms ease; }
+        /* ---------- Desktop sidebar (collapsible) ---------- */
+        aside.sidebar { transition: width 180ms ease, transform 220ms ease; }
         aside.sidebar[data-collapsed="true"]  { width: 5.25rem; }
         aside.sidebar[data-collapsed="false"] { width: 16rem; }
-        /* Collapsed: stack icon + label vertically so names stay visible */
-        aside.sidebar[data-collapsed="true"] .sidebar-link  {
+        aside.sidebar[data-collapsed="true"] .sidebar-link {
             flex-direction: column; gap: 2px;
             justify-content: center; align-items: center;
             padding: 0.55rem 0.25rem;
@@ -28,9 +35,46 @@
         aside.sidebar[data-collapsed="true"] .section-label { font-size: 9px; padding-left: 0; padding-right: 0; text-align: center; }
         aside.sidebar[data-collapsed="true"] .footer-block  { padding: 0.5rem 0.25rem; }
         aside.sidebar[data-collapsed="true"] .footer-detail { display: none; }
-        /* Hide scrollbar on sidebar nav (still scrollable via wheel/drag) */
         aside.sidebar nav { scrollbar-width: none; -ms-overflow-style: none; }
         aside.sidebar nav::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+        /* ---------- Mobile sidebar drawer ---------- */
+        @media (max-width: 1023.98px) {
+            aside.sidebar {
+                position: fixed;
+                inset: 0 auto 0 0;
+                z-index: 50;
+                width: 17rem !important;          /* override desktop collapsed/expanded */
+                transform: translateX(-100%);
+                box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+            }
+            aside.sidebar[data-mobile-open="true"] { transform: translateX(0); }
+            /* On mobile the sidebar is always "expanded" visually so labels show */
+            aside.sidebar .sidebar-link { flex-direction: row !important; gap: 0.75rem !important; padding: 0.75rem 1.25rem !important; }
+            aside.sidebar .sidebar-label { font-size: 0.875rem !important; text-align: left !important; }
+            aside.sidebar .footer-detail, aside.sidebar .section-label { display: block !important; }
+            #sidebarToggle { display: none; }
+            #sidebarBackdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 40; }
+            #sidebarBackdrop.is-open { display: block; }
+            body.no-scroll { overflow: hidden; }
+        }
+
+        /* ---------- Page chrome scaling on small screens ---------- */
+        .app-header { height: 3.5rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+        @media (min-width: 768px) { .app-header { height: 4rem; padding-left: 1.5rem; padding-right: 1.5rem; } }
+
+        /* Make tables breathe on mobile: edge-to-edge horizontal scroll. */
+        @media (max-width: 767.98px) {
+            main.app-main { padding: 0.75rem !important; }
+            .px-6.pt-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+            /* Tables inside cards keep their card chrome but can scroll horizontally */
+            .overflow-x-auto > table { min-width: 720px; }
+        }
+
+        /* Respect device safe areas (iOS notch / home indicator) */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            body { padding-bottom: env(safe-area-inset-bottom); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased">
@@ -39,12 +83,20 @@
     $companyName = config('app.company_name', 'Altum Credo Finance Private Limited');
 @endphp
 <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar (expanded by default; state persisted in localStorage) -->
-    <aside class="sidebar flex flex-col flex-shrink-0" data-collapsed="false" id="appSidebar"
+
+    <!-- Mobile backdrop -->
+    <div id="sidebarBackdrop"></div>
+
+    <!-- Sidebar (desktop: pinned + collapsible; mobile: slide-in drawer) -->
+    <aside class="sidebar flex flex-col flex-shrink-0" data-collapsed="false" data-mobile-open="false" id="appSidebar"
            style="background: linear-gradient(180deg, #002E52 0%, #0056B3 100%);">
 
-        <div class="logo-wrap h-20 flex items-center justify-center px-3 bg-white border-b border-gray-200">
-            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-12 object-contain">
+        <div class="logo-wrap h-16 md:h-20 flex items-center justify-between px-3 bg-white border-b border-gray-200">
+            <img src="{{ asset('images/altumcredo_logo.png') }}" alt="Altum Credo" class="h-10 md:h-12 object-contain">
+            <button type="button" id="sidebarCloseMobile"
+                    class="lg:hidden p-2 -mr-1 text-gray-500 hover:text-gray-800" aria-label="Close menu">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
 
         <nav class="flex-1 overflow-y-auto py-3">
@@ -113,7 +165,7 @@
             @endif
         </nav>
 
-        <!-- Footer: user, company, attribution, hamburger -->
+        <!-- Footer: user, company, attribution -->
         <div class="sidebar-footer border-t border-white/10 footer-block p-4">
             <div class="footer-detail">
                 <div class="text-xs text-gray-300 font-medium truncate">{{ $user->name }}</div>
@@ -134,7 +186,7 @@
             </div>
         </div>
 
-        <!-- Collapse toggle (always visible, pinned at bottom) -->
+        <!-- Desktop collapse toggle (hidden on mobile via CSS) -->
         <button type="button" id="sidebarToggle"
                 class="w-full py-3 border-t border-white/10 text-gray-300 hover:bg-white/10 flex items-center justify-center"
                 title="Toggle sidebar">
@@ -145,19 +197,31 @@
     </aside>
 
     <!-- Main content -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b border-gray-200 border-t-2 border-t-brand-500 flex items-center justify-between px-6 flex-shrink-0">
-            <h1 class="text-lg font-semibold text-gray-800">@yield('title', 'Dashboard')</h1>
-            <div class="flex items-center gap-4">
-                <a href="{{ route('notifications.index') }}" class="relative text-gray-500 hover:text-brand-500" id="notifBell">
+    <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+        <header class="app-header bg-white border-b border-gray-200 border-t-2 border-t-brand-500 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+                <button type="button" id="sidebarOpenMobile"
+                        class="lg:hidden p-2 -ml-2 text-gray-700 hover:text-brand-600" aria-label="Open menu">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <h1 class="text-base md:text-lg font-semibold text-gray-800 truncate">@yield('title', 'Dashboard')</h1>
+            </div>
+            <div class="flex items-center gap-3 md:gap-4">
+                <a href="{{ route('notifications.index') }}" class="relative text-gray-500 hover:text-brand-500 p-1" id="notifBell" aria-label="Notifications">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                     @php $unread = $user->unreadNotifications()->count(); @endphp
-                    <span id="notifCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center {{ $unread > 0 ? '' : 'hidden' }}">{{ $unread }}</span>
+                    <span id="notifCount" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center {{ $unread > 0 ? '' : 'hidden' }}">{{ $unread }}</span>
                 </a>
+                <form method="POST" action="{{ route('logout') }}" class="lg:hidden">
+                    @csrf
+                    <button type="submit" class="text-xs text-gray-500 hover:text-red-600 px-2 py-1" aria-label="Logout">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    </button>
+                </form>
             </div>
         </header>
 
-        <div class="px-6 pt-4">
+        <div class="px-3 md:px-6 pt-3 md:pt-4">
             @if(session('success'))
             <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded mb-4 text-sm">{{ session('success') }}</div>
             @endif
@@ -171,7 +235,7 @@
             @endif
         </div>
 
-        <main class="flex-1 overflow-y-auto p-6">
+        <main class="app-main flex-1 overflow-y-auto p-3 md:p-6">
             @yield('content')
         </main>
     </div>
@@ -179,8 +243,13 @@
 
 <script>
 (function() {
-    const sidebar = document.getElementById('appSidebar');
-    const toggle  = document.getElementById('sidebarToggle');
+    const sidebar  = document.getElementById('appSidebar');
+    const toggle   = document.getElementById('sidebarToggle');
+    const openBtn  = document.getElementById('sidebarOpenMobile');
+    const closeBtn = document.getElementById('sidebarCloseMobile');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    // Desktop persisted collapse state
     const stored  = localStorage.getItem('ticketing.sidebar.collapsed');
     if (stored !== null) sidebar.dataset.collapsed = stored;
     toggle.addEventListener('click', () => {
@@ -188,6 +257,54 @@
         sidebar.dataset.collapsed = now;
         localStorage.setItem('ticketing.sidebar.collapsed', now);
     });
+
+    // Mobile drawer
+    const isMobile = () => window.matchMedia('(max-width: 1023.98px)').matches;
+    const openDrawer = () => {
+        sidebar.dataset.mobileOpen = 'true';
+        backdrop.classList.add('is-open');
+        document.body.classList.add('no-scroll');
+    };
+    const closeDrawer = () => {
+        sidebar.dataset.mobileOpen = 'false';
+        backdrop.classList.remove('is-open');
+        document.body.classList.remove('no-scroll');
+    };
+    if (openBtn)  openBtn.addEventListener('click', openDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (backdrop) backdrop.addEventListener('click', closeDrawer);
+    // Auto-close drawer on nav click (mobile only)
+    sidebar.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', () => { if (isMobile()) closeDrawer(); });
+    });
+    // Close drawer if user resizes to desktop
+    window.addEventListener('resize', () => { if (!isMobile()) closeDrawer(); });
+    // ESC closes drawer
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isMobile()) closeDrawer(); });
+
+    // Auto-label cells for mobile card tables: any <table data-mobile="cards">
+    // gets data-label populated from its <thead> th text. Cells whose label
+    // is empty (e.g. action columns) get data-label-skip so the ::before is hidden.
+    function labelCardTables() {
+        document.querySelectorAll('table[data-mobile="cards"]').forEach(tbl => {
+            if (tbl.dataset.labeled === '1') return;
+            const heads = Array.from(tbl.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            tbl.querySelectorAll('tbody tr').forEach(tr => {
+                Array.from(tr.children).forEach((td, i) => {
+                    if (td.tagName !== 'TD') return;
+                    if (td.hasAttribute('data-label')) return;
+                    const colspan = parseInt(td.getAttribute('colspan') || '1', 10);
+                    if (colspan > 1) return; // empty-state rows
+                    const label = heads[i] || '';
+                    if (label) td.setAttribute('data-label', label);
+                });
+            });
+            tbl.dataset.labeled = '1';
+        });
+    }
+    labelCardTables();
+    // Re-run if Livewire or other code re-renders content
+    document.addEventListener('livewire:navigated', labelCardTables);
 
     // Unread notification polling
     const badge = document.getElementById('notifCount');

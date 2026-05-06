@@ -3,10 +3,10 @@
 @section('content')
 <a href="{{ route('reports.index') }}" class="text-brand-500 hover:underline text-sm mb-4 block">&larr; Reports</a>
 
-<div class="flex items-center justify-between mb-6">
-    <h2 class="text-xl font-bold text-gray-700">Team Performance</h2>
+<div class="flex items-center justify-between mb-6 flex-wrap gap-2">
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">Team Performance</h2>
     <a href="{{ route('reports.team', ['format' => 'xlsx']) }}"
-       class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600">Export Excel</a>
+       class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600 btn-touch">Export Excel</a>
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-x-auto">

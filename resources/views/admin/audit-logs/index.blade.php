@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Audit Logs')
 @section('content')
-<h2 class="text-xl font-bold text-gray-700 mb-4">Audit Logs</h2>
+<h2 class="text-lg md:text-xl font-bold text-gray-700 mb-4">Audit Logs</h2>
 
-<form method="GET" class="bg-white shadow rounded p-4 grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+<form method="GET" class="bg-white shadow rounded p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-4">
     <label class="block">
         <span class="text-xs font-medium text-gray-500">Model</span>
         <select name="auditable_type" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
@@ -39,7 +39,8 @@
 </form>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm" data-mobile="cards">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
                 <th class="px-4 py-3 text-left w-40">When</th>
@@ -80,6 +81,7 @@
             @endforelse
         </tbody>
     </table>
-    <div class="px-6 py-4 border-t">{{ $logs->links() }}</div>
+    </div>
+    <div class="px-4 md:px-6 py-3 md:py-4 border-t">{{ $logs->links() }}</div>
 </div>
 @endsection

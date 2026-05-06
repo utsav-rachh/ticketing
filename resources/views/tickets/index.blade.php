@@ -2,98 +2,116 @@
 @section('title', 'All Tickets')
 @section('content')
 
-{{-- Inline filter bar (no collapsible, no "filter" label). --}}
-<form method="GET" class="bg-white shadow-sm rounded mb-4 px-3 py-2 flex flex-wrap items-end gap-2 text-sm">
-    <label class="flex flex-col">
-        <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">Status</span>
-        <select name="status" class="border border-gray-300 rounded px-2 py-1 text-xs w-32">
-            <option value="">All</option>
-            @foreach(['open','assigned','in_progress','pending_info','hold','resolved','closed'] as $s)
-            <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ str_replace('_',' ',$s) }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label class="flex flex-col">
-        <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">Type</span>
-        <select name="support_type" class="border border-gray-300 rounded px-2 py-1 text-xs w-32">
-            <option value="">All</option>
-            @foreach(['application','infrastructure','admin'] as $t)
-            <option value="{{ $t }}" {{ request('support_type') === $t ? 'selected' : '' }}>{{ $t }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label class="flex flex-col">
-        <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">Priority</span>
-        <select name="priority" class="border border-gray-300 rounded px-2 py-1 text-xs w-28">
-            <option value="">All</option>
-            @foreach(['critical','high','medium','low'] as $p)
-            <option value="{{ $p }}" {{ request('priority') === $p ? 'selected' : '' }}>{{ $p }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label class="flex flex-col">
-        <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">State</span>
-        <select name="region_id" class="border border-gray-300 rounded px-2 py-1 text-xs w-36">
-            <option value="">All</option>
-            @foreach(\App\Models\Region::active()->orderBy('name')->get() as $r)
-            <option value="{{ $r->id }}" {{ request('region_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
-            @endforeach
-        </select>
-    </label>
-    <label class="flex flex-col">
-        <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">From</span>
-        <input type="date" name="from" value="{{ request('from') }}" class="border border-gray-300 rounded px-2 py-1 text-xs">
-    </label>
-    <label class="flex flex-col">
-        <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">To</span>
-        <input type="date" name="to" value="{{ request('to') }}" class="border border-gray-300 rounded px-2 py-1 text-xs">
-    </label>
-    <label class="inline-flex items-center gap-1.5 text-xs text-gray-600 mb-1 ml-1">
-        <input type="checkbox" name="is_red_flag" value="1" {{ request('is_red_flag') ? 'checked' : '' }}>
-        Red-flagged
-    </label>
-    <div class="flex items-center gap-2 ml-auto">
-        <button type="submit" class="text-white px-3 py-1.5 rounded text-xs font-medium" style="background:#0056B3;">Apply</button>
-        <a href="{{ route('tickets.index') }}" class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded text-xs">Clear</a>
+{{-- Mobile-only top bar: title + New Ticket --}}
+<div class="flex items-center justify-between mb-3 md:hidden">
+    <h2 class="text-lg font-bold text-gray-700">Tickets</h2>
+    <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white px-3 py-2 rounded text-sm hover:bg-brand-600 btn-touch">+ New</a>
+</div>
 
-        {{-- Column visibility dropdown — preferences saved per user in localStorage. --}}
-        <div class="relative" x-data="{ open: false }">
-            <button type="button" @click="open = !open"
-                    class="bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs flex items-center gap-1 hover:bg-gray-50">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                Columns
-            </button>
-            <div x-show="open" @click.outside="open = false" x-cloak
-                 class="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded shadow-lg w-44 py-1 text-xs">
-                @php
-                    $cols = [
-                        'ticket' => 'Ticket #',
-                        'subject' => 'Subject',
-                        'type' => 'Type',
-                        'priority' => 'Priority',
-                        'status' => 'Status',
-                        'branch' => 'Branch',
-                        'assignee' => 'Assigned To',
-                        'tat' => 'TAT',
-                        'aging' => 'Aging',
-                        'created' => 'Created',
-                    ];
-                @endphp
-                @foreach($cols as $key => $label)
-                <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
-                    <input type="checkbox" class="ticket-col-toggle" data-col="{{ $key }}" checked>
-                    <span class="text-gray-700">{{ $label }}</span>
-                </label>
+{{-- Inline filter bar — collapsible on mobile --}}
+<div x-data="{ open: window.matchMedia('(min-width: 768px)').matches }" class="mb-4">
+    <button type="button" @click="open = !open"
+            class="md:hidden w-full flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 mb-2 btn-touch">
+        <span class="flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            Filters
+        </span>
+        <svg class="w-4 h-4" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </button>
+
+    <form method="GET" x-show="open" x-cloak
+          class="filter-strip bg-white shadow-sm rounded-lg px-3 py-3 flex flex-wrap items-end gap-2 text-sm">
+        <label class="flex flex-col">
+            <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">Status</span>
+            <select name="status" class="border border-gray-300 rounded px-2 py-1 text-xs w-32">
+                <option value="">All</option>
+                @foreach(['open','assigned','in_progress','pending_info','hold','resolved','closed'] as $s)
+                <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ str_replace('_',' ',$s) }}</option>
                 @endforeach
-            </div>
-        </div>
+            </select>
+        </label>
+        <label class="flex flex-col">
+            <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">Type</span>
+            <select name="support_type" class="border border-gray-300 rounded px-2 py-1 text-xs w-32">
+                <option value="">All</option>
+                @foreach(['application','infrastructure','admin'] as $t)
+                <option value="{{ $t }}" {{ request('support_type') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label class="flex flex-col">
+            <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">Priority</span>
+            <select name="priority" class="border border-gray-300 rounded px-2 py-1 text-xs w-28">
+                <option value="">All</option>
+                @foreach(['critical','high','medium','low'] as $p)
+                <option value="{{ $p }}" {{ request('priority') === $p ? 'selected' : '' }}>{{ $p }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label class="flex flex-col">
+            <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">State</span>
+            <select name="region_id" class="border border-gray-300 rounded px-2 py-1 text-xs w-36">
+                <option value="">All</option>
+                @foreach(\App\Models\Region::active()->orderBy('name')->get() as $r)
+                <option value="{{ $r->id }}" {{ request('region_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label class="flex flex-col">
+            <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">From</span>
+            <input type="date" name="from" value="{{ request('from') }}" class="border border-gray-300 rounded px-2 py-1 text-xs">
+        </label>
+        <label class="flex flex-col">
+            <span class="text-[10px] uppercase font-medium text-gray-500 ml-0.5">To</span>
+            <input type="date" name="to" value="{{ request('to') }}" class="border border-gray-300 rounded px-2 py-1 text-xs">
+        </label>
+        <label class="inline-flex items-center gap-1.5 text-xs text-gray-600 mb-1 ml-1 filter-item">
+            <input type="checkbox" name="is_red_flag" value="1" {{ request('is_red_flag') ? 'checked' : '' }}>
+            Red-flagged
+        </label>
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto md:ml-auto">
+            <button type="submit" class="flex-1 md:flex-none text-white px-3 py-2 md:py-1.5 rounded text-xs font-medium btn-touch" style="background:#0056B3;">Apply</button>
+            <a href="{{ route('tickets.index') }}" class="flex-1 md:flex-none text-center bg-gray-100 text-gray-600 px-3 py-2 md:py-1.5 rounded text-xs btn-touch">Clear</a>
 
-        @if(auth()->user()->canExport())
-        <a href="{{ route('tickets.export', request()->query()) }}" class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded text-xs">Export Excel</a>
-        @endif
-        <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white px-3 py-1.5 rounded text-xs hover:bg-brand-600">+ New Ticket</a>
-    </div>
-</form>
+            {{-- Column visibility (desktop only) --}}
+            <div class="relative hidden md:block" x-data="{ open: false }">
+                <button type="button" @click="open = !open"
+                        class="bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded text-xs flex items-center gap-1 hover:bg-gray-50">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                    Columns
+                </button>
+                <div x-show="open" @click.outside="open = false" x-cloak
+                     class="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded shadow-lg w-44 py-1 text-xs">
+                    @php
+                        $cols = [
+                            'ticket' => 'Ticket #',
+                            'subject' => 'Subject',
+                            'type' => 'Type',
+                            'priority' => 'Priority',
+                            'status' => 'Status',
+                            'branch' => 'Branch',
+                            'assignee' => 'Assigned To',
+                            'tat' => 'TAT',
+                            'aging' => 'Aging',
+                            'created' => 'Created',
+                        ];
+                    @endphp
+                    @foreach($cols as $key => $label)
+                    <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="ticket-col-toggle" data-col="{{ $key }}" checked>
+                        <span class="text-gray-700">{{ $label }}</span>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+
+            @if(auth()->user()->canExport())
+            <a href="{{ route('tickets.export', request()->query()) }}" class="bg-gray-100 text-gray-700 px-3 py-1.5 rounded text-xs hidden md:inline-block">Export Excel</a>
+            @endif
+            <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white px-3 py-1.5 rounded text-xs hover:bg-brand-600 hidden md:inline-block">+ New Ticket</a>
+        </div>
+    </form>
+</div>
 
 @php
     $sortLink = function ($column) use ($sort, $dir) {
@@ -109,7 +127,8 @@
 @endphp
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full text-sm" id="ticketsTable">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm" id="ticketsTable" data-mobile="cards">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
                 @php $s = $sortLink('ticket_number'); @endphp
@@ -173,7 +192,8 @@
             @endforelse
         </tbody>
     </table>
-    <div class="px-6 py-4 border-t">{{ $tickets->links() }}</div>
+    </div>
+    <div class="px-4 md:px-6 py-3 md:py-4 border-t">{{ $tickets->links() }}</div>
 </div>
 
 <script>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $subcategory->exists ? 'Edit Issue Type' : 'New Issue Type')
 @section('content')
-<div class="max-w-xl mx-auto bg-white rounded-lg shadow p-6">
+<div class="max-w-xl mx-auto bg-white rounded-lg shadow p-4 md:p-6">
     <h2 class="text-lg font-bold text-gray-700 mb-4">{{ $subcategory->exists ? 'Edit Issue Type' : 'New Issue Type' }}</h2>
     <form method="POST" action="{{ $subcategory->exists ? route('admin.subcategories.update', $subcategory) : route('admin.subcategories.store') }}">
         @csrf

@@ -14,17 +14,17 @@
         ['Red-Flagged',   'red_flag', '#B91C1C', $statTotal ? round($stats['red_flag'] / $statTotal * 100) : 0, route('tickets.index', ['is_red_flag' => 1, 'active_only' => 1])],
     ];
 @endphp
-<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 md:gap-4 mb-4 md:mb-6">
     @foreach($cardSpec as [$label, $key, $color, $pct, $url])
     @php $pct = max(0, min(100, (int) $pct)); @endphp
-    <a href="{{ $url }}" class="bg-white rounded-xl shadow-sm py-5 px-3 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-1" style="--tw-ring-color: {{ $color }};">
-        <div class="rounded-full flex items-center justify-center"
-             style="width: 80px; height: 80px;
+    <a href="{{ $url }}" class="bg-white rounded-xl shadow-sm py-3 md:py-5 px-2 md:px-3 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-1" style="--tw-ring-color: {{ $color }};">
+        <div class="rounded-full flex items-center justify-center stat-ring"
+             style="width: clamp(56px, 16vw, 80px); aspect-ratio: 1 / 1;
                     background: {{ $color }}10;
                     border: 4px solid {{ $color }};">
-            <span class="text-2xl font-extrabold leading-none" style="color: {{ $color }};">{{ $stats[$key] }}</span>
+            <span class="text-xl md:text-2xl font-extrabold leading-none" style="color: {{ $color }};">{{ $stats[$key] }}</span>
         </div>
-        <div class="mt-3 text-xs font-semibold text-gray-700">{{ $label }}</div>
+        <div class="mt-2 md:mt-3 text-[11px] md:text-xs font-semibold text-gray-700">{{ $label }}</div>
         <div class="text-[10px] text-gray-400 mt-0.5">
             {{ $key === 'total' ? 'all tickets' : $pct . '% of total' }}
         </div>
@@ -33,20 +33,20 @@
 </div>
 
 @if(auth()->user()->canManageProjects())
-<div class="bg-white rounded-lg shadow p-4 mb-6">
+<div class="bg-white rounded-lg shadow p-4 mb-4 md:mb-6">
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
             <div class="text-sm font-semibold text-gray-700">Quick create</div>
             <div class="text-xs text-gray-500">Start a new ticket or set up a project workspace.</div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 w-full sm:w-auto">
             <a href="{{ route('tickets.create') }}"
-               class="inline-flex items-center gap-2 text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">
+               class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 text-white px-4 py-2 rounded text-sm font-medium btn-touch" style="background:#0056B3;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 New Ticket
             </a>
             <a href="{{ route('projects.create') }}"
-               class="inline-flex items-center gap-2 bg-white border border-brand-500 text-brand-600 px-4 py-2 rounded text-sm font-medium hover:bg-brand-50">
+               class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-white border border-brand-500 text-brand-600 px-4 py-2 rounded text-sm font-medium hover:bg-brand-50 btn-touch">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
                 New Project
             </a>
@@ -78,17 +78,17 @@
 @endphp
 
 {{-- Management Tickets — pinned at top, full op set (assign dropdown, TAT progress, etc). --}}
-<div class="bg-white rounded-lg shadow mb-6 border-t-4 border-red-500">
-    <div class="px-6 py-4 border-b flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M3 3a1 1 0 011-1h12a1 1 0 011 1v14l-7-3-7 3V3z"/></svg>
+<div class="bg-white rounded-lg shadow mb-4 md:mb-6 border-t-4 border-red-500">
+    <div class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 min-w-0">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M3 3a1 1 0 011-1h12a1 1 0 011 1v14l-7-3-7 3V3z"/></svg>
             <h2 class="font-semibold text-gray-700">Management Tickets</h2>
-            <span class="text-xs text-gray-500">— red-flagged & top priority</span>
+            <span class="text-xs text-gray-500 hidden sm:inline">— red-flagged & top priority</span>
         </div>
         <span class="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">{{ $managementTickets->count() }}</span>
     </div>
     <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm" data-mobile="cards">
             <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
                     <th class="px-4 py-3 text-left">Ticket #</th>
@@ -184,12 +184,12 @@
 
 {{-- Recent Tickets — excludes anything already shown above. --}}
 <div class="bg-white rounded-lg shadow">
-    <div class="px-6 py-4 border-b flex items-center justify-between">
+    <div class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
         <h2 class="font-semibold text-gray-700">Recent Tickets</h2>
-        <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white text-sm px-4 py-2 rounded hover:bg-brand-600">+ New Ticket</a>
+        <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white text-sm px-3 py-2 rounded hover:bg-brand-600 btn-touch">+ New Ticket</a>
     </div>
     <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm" data-mobile="cards">
             <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
                     <th class="px-4 py-3 text-left">Ticket #</th>

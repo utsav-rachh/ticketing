@@ -1,12 +1,12 @@
 @extends('layouts.app')
 @section('title', 'Expense Approvals')
 @section('content')
-<div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-gray-700">Expense Approvals</h2>
-    <div class="flex gap-2 text-sm">
+<div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">Expense Approvals</h2>
+    <div class="flex gap-2 text-sm overflow-x-auto -mx-1 px-1 pb-1">
         @foreach(['pending','approved','rejected'] as $s)
         <a href="{{ route('expenses.approvals', ['status' => $s]) }}"
-           class="px-3 py-1.5 rounded-full text-xs font-medium {{ $status === $s ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+           class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium {{ $status === $s ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
             {{ ucfirst($s) }} ({{ $counts[$s] ?? 0 }})
         </a>
         @endforeach
@@ -14,7 +14,8 @@
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm" data-mobile="cards">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
                 <th class="px-4 py-3 text-left">Ticket</th>
@@ -68,6 +69,7 @@
             @endforelse
         </tbody>
     </table>
-    <div class="px-6 py-4 border-t">{{ $expenses->links() }}</div>
+    </div>
+    <div class="px-4 md:px-6 py-3 md:py-4 border-t">{{ $expenses->links() }}</div>
 </div>
 @endsection

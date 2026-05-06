@@ -1,12 +1,13 @@
 @extends('layouts.app')
 @section('title', 'Vendors')
 @section('content')
-<div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-bold text-gray-700">Vendors</h2>
-    <a href="{{ route('admin.vendors.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium" style="background:#0056B3;">+ New vendor</a>
+<div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">Vendors</h2>
+    <a href="{{ route('admin.vendors.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium btn-touch" style="background:#0056B3;">+ New vendor</a>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm" data-mobile="cards">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
                 <th class="px-4 py-3 text-left">Code</th>
@@ -45,6 +46,7 @@
             @endforelse
         </tbody>
     </table>
-    <div class="px-6 py-4 border-t">{{ $vendors->links() }}</div>
+    </div>
+    <div class="px-4 md:px-6 py-3 md:py-4 border-t">{{ $vendors->links() }}</div>
 </div>
 @endsection

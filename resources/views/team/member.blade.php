@@ -1,12 +1,13 @@
 @extends('layouts.app')
 @section('title', $user->name . "'s Tickets")
 @section('content')
-<div class="flex items-center gap-3 mb-4">
+<div class="flex items-center gap-3 mb-4 flex-wrap">
     <a href="{{ route('team.index') }}" class="text-brand-500 hover:underline text-sm">&larr; Team</a>
-    <h2 class="text-xl font-bold text-gray-700">{{ $user->name }}'s Tickets</h2>
+    <h2 class="text-lg md:text-xl font-bold text-gray-700">{{ $user->name }}'s Tickets</h2>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full text-sm">
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm" data-mobile="cards">
         <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
                 <th class="px-6 py-3 text-left">Ticket #</th>
@@ -30,6 +31,7 @@
             @endforelse
         </tbody>
     </table>
-    <div class="px-6 py-4 border-t">{{ $tickets->links() }}</div>
+    </div>
+    <div class="px-4 md:px-6 py-3 md:py-4 border-t">{{ $tickets->links() }}</div>
 </div>
 @endsection

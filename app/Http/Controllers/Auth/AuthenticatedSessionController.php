@@ -28,6 +28,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Developers always land in their sandbox; they have no access to
+        // the main dashboard / tickets area.
+        if (Auth::user()?->isDeveloper()) {
+            return redirect()->route('developer.home');
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

@@ -223,6 +223,18 @@ class UserSeeder extends Seeder
                 'region_id'      => $regions[$regionCode] ?? null,
             ]);
         }
+
+        // ─── Developer (sandbox-only role; sees Asset Mgmt + Dialer scaffolds) ───
+        $this->upsert([
+            'name'        => 'Developer Sandbox',
+            'email'       => 'dev@altumcredo.com',
+            'password'    => 'dev@123',
+            'role'        => 'developer',
+            'department'  => 'IT — R&D',
+            'employee_id' => 'DEV-0001',
+            'branch_id'   => $puneCorp?->id,
+            'region_id'   => $regions['ST-MH'] ?? null,
+        ]);
     }
 
     private function upsert(array $data): User

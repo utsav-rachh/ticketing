@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeveloperController;
 use App\Http\Controllers\ExpenseApprovalController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -22,6 +23,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn() => redirect()->route('dashboard'));
 
 Route::middleware(['auth','verified'])->group(function () {
+
+    // Developer sandbox — isolated from the main app. Only role=developer
+    // can hit these routes; the post-login redirect sends them straight here.
+    Route::middleware('role:developer')->prefix('developer')->name('developer.')->group(function () {
+        Route::get('/',       [DeveloperController::class, 'home'])->name('home');
+        Route::get('/assets', [DeveloperController::class, 'assets'])->name('assets');
+        Route::get('/dialer', [DeveloperController::class, 'dialer'])->name('dialer');
+    });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

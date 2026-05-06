@@ -14,6 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        // Keep developer-role users inside their sandbox — every authenticated
+        // request runs through this redirect so admin / IT / etc URLs are
+        // unreachable for them.
+        $middleware->web(append: [
+            \App\Http\Middleware\RedirectDeveloperToSandbox::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

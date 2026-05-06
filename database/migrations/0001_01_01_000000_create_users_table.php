@@ -17,7 +17,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['employee','resolver','admin','management'])->default('employee');
+            // Stored as VARCHAR rather than ENUM so the column can be widened without
+            // a DDL migration on every new role (MySQL still gets the ENUM constraint
+            // via the role-extension migrations under database/migrations).
+            $table->string('role', 30)->default('employee');
             $table->enum('resolver_level', ['junior','tl','it_head'])->nullable();
             $table->string('department', 100)->nullable();
             $table->unsignedBigInteger('reports_to')->nullable();

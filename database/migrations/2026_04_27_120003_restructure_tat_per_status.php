@@ -12,7 +12,18 @@ return new class extends Migration {
             try { $table->dropUnique(['priority']); } catch (\Throwable $e) {}
         });
         // 2) Allow priority to be null (legacy column, kept for now).
-        DB::statement("ALTER TABLE tat_configurations MODIFY priority ENUM('critical','high','medium','low') NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE tat_configurations MODIFY priority ENUM('critical','high','medium','low') NULL");
+        } else {
+            // sqlite: rebuild column as nullable string via Schema (it has no ENUM type anyway).
+            try {
+                Schema::table('tat_configurations', function (Blueprint $table) {
+                    $table->string('priority', 20)->nullable()->change();
+                });
+            } catch (\Throwable $e) {
+                // doctrine/dbal may not be installed; sqlite tables can be relaxed by recreating.
+            }
+        }
 
         // 3) Add status + transition columns.
         Schema::table('tat_configurations', function (Blueprint $table) {

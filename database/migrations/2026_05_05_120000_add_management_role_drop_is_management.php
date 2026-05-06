@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` ENUM('employee','resolver','admin','management') NOT NULL DEFAULT 'employee'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` ENUM('employee','resolver','admin','management') NOT NULL DEFAULT 'employee'");
+        }
 
         if (Schema::hasColumn('users', 'is_management')) {
             DB::table('users')->where('is_management', true)->update(['role' => 'management']);
@@ -30,6 +32,8 @@ return new class extends Migration {
             'role'          => 'employee',
         ]);
 
-        DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` ENUM('employee','resolver','admin') NOT NULL DEFAULT 'employee'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` ENUM('employee','resolver','admin') NOT NULL DEFAULT 'employee'");
+        }
     }
 };

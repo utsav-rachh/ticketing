@@ -39,6 +39,7 @@ class User extends Authenticatable
     public function isResolver(): bool   { return $this->role === 'resolver'; }
     public function isAdmin(): bool      { return $this->role === 'admin'; }
     public function isManagement(): bool { return $this->role === 'management'; }
+    public function isDeveloper(): bool  { return $this->role === 'developer'; }
     public function isJunior(): bool     { return $this->isResolver() && $this->resolver_level === 'junior'; }
     public function isTL(): bool         { return $this->isResolver() && $this->resolver_level === 'tl'; }
     public function isITHead(): bool     { return $this->isResolver() && $this->resolver_level === 'it_head'; }

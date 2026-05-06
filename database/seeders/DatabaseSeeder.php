@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             TATConfigurationSeeder::class,
             UserSeeder::class,
             DemoTicketSeeder::class,
+            ProjectSeeder::class,
         ]);
     }
 }

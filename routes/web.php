@@ -53,7 +53,7 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::patch('/tickets/{ticket}/vendor-reference', [TicketController::class, 'setVendorReference'])->name('tickets.vendorRef');
 
     // Team
-    Route::middleware('role:resolver,admin')->group(function () {
+    Route::middleware('role:resolver,admin,ciso')->group(function () {
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
         Route::get('/team/{user}/tickets', [TeamController::class, 'memberTickets'])->name('team.member');
     });

@@ -89,6 +89,7 @@ Route::middleware(['auth','verified'])->group(function () {
 
     // Admin (admin role + CISO — CISO gets the full admin area)
     Route::middleware('role:admin,ciso')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('users/export', [UserController::class, 'export'])->name('users.export');
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('regions', RegionController::class)->except(['show']);
         Route::resource('branches', BranchController::class)->except(['show']);

@@ -1,12 +1,14 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\UsersExport;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Region;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
@@ -17,6 +19,15 @@ class UserController extends Controller
         $regions  = Region::active()->orderBy('name')->get();
         $branches = Branch::active()->orderBy('name')->get();
         return view('admin.users.index', compact('users','regions','branches'));
+    }
+
+    /** Download the full user roster as an Excel file (admin / CISO only — route already gated). */
+    public function export()
+    {
+        $users = User::withTrashed()->with(['supervisor','branch','region','assignedRegion','assignedRegions'])
+            ->orderBy('role')->orderBy('resolver_level')->orderBy('name')->get();
+
+        return Excel::download(new UsersExport($users), 'users-' . now()->format('Ymd-His') . '.xlsx');
     }
 
     public function create()

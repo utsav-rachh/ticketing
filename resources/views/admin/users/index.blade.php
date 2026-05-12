@@ -3,7 +3,13 @@
 @section('content')
 <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
     <h2 class="text-lg md:text-xl font-bold text-gray-700">Users</h2>
-    <a href="{{ route('admin.users.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium btn-touch" style="background:#0056B3;">+ New user</a>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('admin.users.export') }}" class="border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium btn-touch hover:bg-gray-50 inline-flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download Excel
+        </a>
+        <a href="{{ route('admin.users.create') }}" class="text-white px-4 py-2 rounded text-sm font-medium btn-touch" style="background:#0056B3;">+ New user</a>
+    </div>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">

@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\TicketExpense;
 use App\Models\User;
@@ -41,11 +42,35 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Recent tickets: exclude any IDs already shown in the management block,
-        // so a ticket never appears twice on the dashboard.
         $managementIds = $managementTickets->pluck('id')->all();
+
+        // Projects — only Admin / CISO manage projects, so only they get the
+        // project counts and the project-tickets list.
+        $projectStats   = null;
+        $projectTickets = collect();
+        if ($user->canManageProjects()) {
+            $projectStats = [
+                'total'     => Project::count(),
+                'active'    => Project::where('status', 'active')->count(),
+                'on_hold'   => Project::where('status', 'on_hold')->count(),
+                'completed' => Project::where('status', 'completed')->count(),
+            ];
+
+            $projectTickets = (clone $base)
+                ->whereNotNull('project_id')
+                ->when(!empty($managementIds), fn ($q) => $q->whereNotIn('id', $managementIds))
+                ->whereNotIn('status', ['closed'])
+                ->with(['creator','category','subcategory','assignee','branch.region','project'])
+                ->latest()
+                ->take(10)
+                ->get();
+        }
+
+        // Recent tickets: exclude any IDs already shown above (management +
+        // project blocks), so a ticket never appears twice on the dashboard.
+        $shownIds = array_merge($managementIds, $projectTickets->pluck('id')->all());
         $recentTickets = (clone $base)
-            ->when(!empty($managementIds), fn ($q) => $q->whereNotIn('id', $managementIds))
+            ->when(!empty($shownIds), fn ($q) => $q->whereNotIn('id', $shownIds))
             ->with(['creator','category','subcategory','assignee','branch.region'])
             ->latest()->take(10)->get();
 
@@ -59,6 +84,9 @@ class DashboardController extends Controller
             $assignableUsers = $q->orderBy('name')->get(['id','name','resolver_level','assigned_support_type']);
         }
 
-        return view('dashboard', compact('stats','pendingExpenseCount','managementTickets','recentTickets','canQuickAssign','assignableUsers'));
+        return view('dashboard', compact(
+            'stats','pendingExpenseCount','managementTickets','recentTickets',
+            'canQuickAssign','assignableUsers','projectStats','projectTickets'
+        ));
     }
 }

@@ -1,63 +1,73 @@
 @extends('layouts.developer')
-@section('title', 'Sandbox Home')
+@section('title', 'Apps')
 @section('content')
 
-<div class="mb-6">
+<div class="mb-8 text-center">
     <h1 class="text-2xl md:text-3xl font-bold text-white">Welcome back, {{ explode(' ', auth()->user()->name)[0] }}.</h1>
-    <p class="text-slate-400 text-sm mt-1">Pick a feature to prototype. Anything in this sandbox stays inside the developer view until it ships.</p>
+    <p class="text-slate-400 text-sm mt-2">Choose an application to open.</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+
+    {{-- CTS — the live ticketing system --}}
+    <a href="{{ route('dashboard') }}"
+       class="dev-card group block bg-gradient-to-br from-sky-800 to-slate-900 border border-sky-700 rounded-2xl p-6 hover:border-sky-400">
+        <div class="h-14 w-14 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+        </div>
+        <div class="text-lg font-semibold text-white">CTS</div>
+        <div class="text-xs text-sky-300/80 mb-2">Corporate Ticketing System</div>
+        <p class="text-sm text-slate-300 leading-relaxed">
+            The live ticketing app — tickets, lifecycle, TAT/SLA, dashboards, expenses, reports. This is the production system.
+        </p>
+        <div class="mt-4 text-xs text-sky-300 font-medium group-hover:translate-x-0.5 transition">Open CTS →</div>
+    </a>
+
+    {{-- ATS — asset management (still incubating) --}}
     <a href="{{ route('developer.assets') }}"
-       class="dev-card block bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-indigo-500">
-        <div class="flex items-center gap-3 mb-3">
-            <div class="h-12 w-12 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v10l-8 4m8-14L12 11m0 10V11m0 0L4 7m8 14l-8-4V7"/>
-                </svg>
-            </div>
-            <div>
-                <div class="text-lg font-semibold text-white">Asset Management</div>
-                <div class="text-xs text-slate-400">Physical + software assets — multi-branch, ~700 employees</div>
-            </div>
+       class="dev-card group block bg-gradient-to-br from-indigo-800 to-slate-900 border border-indigo-700 rounded-2xl p-6 hover:border-indigo-400">
+        <div class="h-14 w-14 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v10l-8 4m8-14L12 11m0 10V11m0 0L4 7m8 14l-8-4V7"/>
+            </svg>
         </div>
+        <div class="text-lg font-semibold text-white">ATS</div>
+        <div class="text-xs text-indigo-300/80 mb-2">Asset Management System</div>
         <p class="text-sm text-slate-300 leading-relaxed">
-            Track laptops, peripherals, licences and software entitlements across every branch. Assign assets to users,
-            log lifecycle events (issued, returned, repaired, retired) and reconcile against HR / branch rosters.
+            Physical + software asset register across every branch — assignment, lifecycle events, roster reconciliation. Scaffold, awaiting scope-of-work.
         </p>
-        <div class="mt-4 text-xs text-indigo-300 font-medium">Open prototype →</div>
+        <div class="mt-4 text-xs text-indigo-300 font-medium group-hover:translate-x-0.5 transition">Open ATS →</div>
     </a>
 
-    <a href="{{ route('developer.dialer') }}"
-       class="dev-card block bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6 hover:border-emerald-500">
-        <div class="flex items-center gap-3 mb-3">
-            <div class="h-12 w-12 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h2.586a1 1 0 01.707.293L10 5h4l1.707-1.707A1 1 0 0116.414 3H19a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
-                </svg>
-            </div>
-            <div>
-                <div class="text-lg font-semibold text-white">Customer-care Dialer</div>
-                <div class="text-xs text-slate-400">Outbound queue + ticket sync</div>
-            </div>
+    {{-- Dialer — Smartping cloud telephony --}}
+    <a href="{{ route('developer.dialer.home') }}"
+       class="dev-card group block bg-gradient-to-br from-emerald-800 to-slate-900 border border-emerald-700 rounded-2xl p-6 hover:border-emerald-400">
+        <div class="h-14 w-14 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center mb-4">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
         </div>
+        <div class="text-lg font-semibold text-white">Dialer</div>
+        <div class="text-xs text-emerald-300/80 mb-2">Smartping cloud telephony · 1600 toll-free</div>
         <p class="text-sm text-slate-300 leading-relaxed">
-            Power-dial customer-care queues. Each call attaches to (or auto-creates) a ticket so disposition,
-            recording link and follow-ups stay inside the existing ticketing flow.
+            Inbound + outbound calling on Smartping. Customer database, CSV import, auto-created dialer tickets, call trail, missed calls and recording playback.
         </p>
-        <div class="mt-4 text-xs text-emerald-300 font-medium">Open prototype →</div>
+        <div class="mt-4 text-xs text-emerald-300 font-medium group-hover:translate-x-0.5 transition">Open Dialer →</div>
     </a>
+
 </div>
 
-<div class="mt-8 bg-slate-800/50 border border-slate-700 rounded-lg p-5">
+<div class="mt-10 max-w-5xl mx-auto bg-slate-800/40 border border-slate-700 rounded-lg p-5">
     <div class="flex items-center gap-2 text-sm text-slate-300 font-semibold mb-2">
         <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a1 1 0 011 1v3a1 1 0 11-2 0V7a1 1 0 011-1zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-        Sandbox rules
+        Heads up
     </div>
     <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
-        <li>Nothing here is visible to admin, CISO, resolvers, management or employees yet.</li>
-        <li>Promote a feature only after the scope-of-work is signed off and tests pass.</li>
-        <li>Reuse existing models (User, Branch, Ticket) where possible — don't duplicate org data.</li>
+        <li>ATS and Dialer are only visible under the developer role — admin / CISO / management / employees don't see them yet.</li>
+        <li>CTS is the real system. Anything you do there is live data.</li>
+        <li>Promote ATS / Dialer to the main app (sidebar, other roles) only after sign-off.</li>
     </ul>
 </div>
 @endsection

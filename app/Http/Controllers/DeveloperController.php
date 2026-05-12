@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 /**
- * Developer sandbox — isolated workspace where the developer prototypes
- * features (Asset Management, Dialer) before they ship to other roles.
+ * Developer workspace — the app launcher (CTS / ATS / Dialer) plus the
+ * still-incubating ATS prototype. The Dialer module lives in its own
+ * controllers under App\Http\Controllers\Developer.
  *
- * Routes are gated by `role:developer` middleware so admin / CISO /
- * resolvers / employees never see this area.
+ * Routes are gated by `role:developer` middleware, so admin / CISO /
+ * resolvers / employees never see ATS or the Dialer.
  */
 class DeveloperController extends Controller
 {
@@ -20,10 +21,5 @@ class DeveloperController extends Controller
     public function assets(Request $request)
     {
         return view('developer.assets');
-    }
-
-    public function dialer(Request $request)
-    {
-        return view('developer.dialer');
     }
 }

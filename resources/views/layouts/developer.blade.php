@@ -22,17 +22,19 @@
             <div class="flex items-center gap-3 min-w-0">
                 <div class="h-10 w-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold">DEV</div>
                 <div class="min-w-0">
-                    <a href="{{ route('developer.home') }}" class="text-base md:text-lg font-bold text-white truncate block">Developer Sandbox</a>
-                    <div class="text-[11px] text-slate-400 truncate">Internal — features under build, not yet released</div>
+                    <a href="{{ route('developer.home') }}" class="text-base md:text-lg font-bold text-white truncate block">Developer Workspace</a>
+                    <div class="text-[11px] text-slate-400 truncate">CTS · ATS · Dialer — internal launcher</div>
                 </div>
             </div>
             <nav class="flex items-center gap-2 text-sm">
                 <a href="{{ route('developer.home') }}"
-                   class="px-3 py-1.5 rounded {{ request()->routeIs('developer.home') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white' }}">Home</a>
+                   class="px-3 py-1.5 rounded {{ request()->routeIs('developer.home') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white' }}">Apps</a>
+                <a href="{{ route('dashboard') }}"
+                   class="px-3 py-1.5 rounded text-slate-300 hover:text-white">CTS</a>
                 <a href="{{ route('developer.assets') }}"
-                   class="px-3 py-1.5 rounded {{ request()->routeIs('developer.assets') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white' }}">Asset Mgmt</a>
-                <a href="{{ route('developer.dialer') }}"
-                   class="px-3 py-1.5 rounded {{ request()->routeIs('developer.dialer') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white' }}">Dialer</a>
+                   class="px-3 py-1.5 rounded {{ request()->routeIs('developer.assets') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white' }}">ATS</a>
+                <a href="{{ route('developer.dialer.home') }}"
+                   class="px-3 py-1.5 rounded {{ request()->routeIs('developer.dialer.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white' }}">Dialer</a>
                 <span class="hidden md:inline text-xs text-slate-500 mx-2">·</span>
                 <span class="hidden md:inline text-xs text-slate-400">{{ $user->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
@@ -51,7 +53,7 @@
     </main>
 
     <footer class="border-t border-slate-800 text-center text-xs text-slate-500 py-4">
-        Sandbox build — not visible to admin / IT / management. Promote a feature to the main app only after it passes review.
+        ATS &amp; Dialer are developer-only — not visible to admin / CISO / management. Promote to the main app only after sign-off.
     </footer>
 </div>
 </body>

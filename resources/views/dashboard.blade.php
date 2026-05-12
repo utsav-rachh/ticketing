@@ -2,6 +2,14 @@
 @section('title', 'Dashboard')
 @section('content')
 
+<style>
+    /* Collapsible dashboard sections */
+    details.dash-section > summary { list-style: none; cursor: pointer; }
+    details.dash-section > summary::-webkit-details-marker { display: none; }
+    details.dash-section > summary .dash-chevron { transition: transform 150ms ease; }
+    details.dash-section[open] > summary .dash-chevron { transform: rotate(90deg); }
+</style>
+
 {{-- Circular stat tiles. Each is a colored ring + big count + label below. Clicking a tile opens the ticket list pre-filtered to that stat. --}}
 @php
     $statTotal = max(1, (int) $stats['total']);
@@ -31,6 +39,35 @@
     </a>
     @endforeach
 </div>
+
+@if($projectStats !== null)
+{{-- Projects summary — Admin / CISO only. --}}
+@php
+    $projectCards = [
+        ['Projects',  'total',     '#0056B3', route('projects.index')],
+        ['Active',    'active',    '#0EA5E9', route('projects.index', ['status' => 'active'])],
+        ['On Hold',   'on_hold',   '#A855F7', route('projects.index', ['status' => 'on_hold'])],
+        ['Completed', 'completed', '#16A34A', route('projects.index', ['status' => 'completed'])],
+    ];
+@endphp
+<div class="bg-white rounded-lg shadow p-4 mb-4 md:mb-6">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+            <h2 class="font-semibold text-gray-700">Projects</h2>
+        </div>
+        <a href="{{ route('projects.index') }}" class="text-xs text-brand-500 hover:underline">View all →</a>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        @foreach($projectCards as [$label, $key, $color, $url])
+        <a href="{{ $url }}" class="rounded-lg border border-gray-100 hover:border-gray-200 hover:shadow-sm transition p-3 flex items-center gap-3">
+            <span class="text-2xl font-extrabold leading-none" style="color: {{ $color }};">{{ $projectStats[$key] }}</span>
+            <span class="text-xs font-semibold text-gray-600">{{ $label }}</span>
+        </a>
+        @endforeach
+    </div>
+</div>
+@endif
 
 @if(auth()->user()->canManageProjects())
 <div class="bg-white rounded-lg shadow p-4 mb-4 md:mb-6">
@@ -64,219 +101,82 @@
 </div>
 @endif
 
-{{-- Helper renderer used for both Management and Recent rows so they share full op set. --}}
-@php
-    $renderRow = function ($ticket, $canQuickAssign, $assignableUsers) {
-        $isViolated = $ticket->is_tat_violated && !in_array($ticket->status, ['resolved','closed']);
-        return [
-            'isViolated' => $isViolated,
-            'rowClass'   => $isViolated
-                ? 'bg-red-100 hover:bg-red-200 border-l-4 border-red-500'
-                : ($ticket->is_red_flag ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'),
-        ];
-    };
-@endphp
-
 {{-- Management Tickets — pinned at top, full op set (assign dropdown, TAT progress, etc). --}}
-<div class="bg-white rounded-lg shadow mb-4 md:mb-6 border-t-4 border-red-500">
-    <div class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
+<details id="dash-management" class="dash-section bg-white rounded-lg shadow mb-4 md:mb-6 border-t-4 border-red-500" open>
+    <summary class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-2 min-w-0">
+            <svg class="dash-chevron w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M3 3a1 1 0 011-1h12a1 1 0 011 1v14l-7-3-7 3V3z"/></svg>
             <h2 class="font-semibold text-gray-700">Management Tickets</h2>
             <span class="text-xs text-gray-500 hidden sm:inline">— red-flagged & top priority</span>
         </div>
         <span class="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">{{ $managementTickets->count() }}</span>
-    </div>
+    </summary>
     <div class="overflow-x-auto">
-        <table class="w-full text-sm" data-mobile="cards">
-            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
-                <tr>
-                    <th class="px-4 py-3 text-left">Ticket #</th>
-                    <th class="px-4 py-3 text-left">Subject / Issue</th>
-                    <th class="px-4 py-3 text-left">Category</th>
-                    <th class="px-4 py-3 text-left">Priority</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-left">Branch / State</th>
-                    <th class="px-4 py-3 text-left">Raised By</th>
-                    <th class="px-4 py-3 text-left">Assignee</th>
-                    <th class="px-4 py-3 text-left">TAT</th>
-                    <th class="px-4 py-3 text-left">Age</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($managementTickets as $ticket)
-                @php $row = $renderRow($ticket, $canQuickAssign, $assignableUsers); @endphp
-                <tr class="{{ $row['rowClass'] }}">
-                    <td class="px-4 py-3 align-top">
-                        <a href="{{ route('tickets.show', $ticket) }}" class="text-brand-500 hover:underline font-mono text-xs inline-flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-red-600" fill="currentColor" viewBox="0 0 20 20" title="Red-flagged"><path d="M3 4a1 1 0 011-1h4.586A1 1 0 019.293 3.293L10 4h5a1 1 0 011 1v7a1 1 0 01-1 1h-5.586a1 1 0 01-.707-.293L9 12H4v5a1 1 0 11-2 0V4z"/></svg>
-                            {{ $ticket->ticket_number }}
-                        </a>
-                        @if($row['isViolated'])
-                        <div class="mt-1"><span class="bg-red-600 text-white text-[8px] font-bold px-1 py-0.5 rounded">TAT VIOLATED</span></div>
-                        @endif
-                        <div class="text-[10px] text-gray-400 mt-0.5 uppercase">{{ ucfirst($ticket->support_type) }}</div>
-                    </td>
-                    <td class="px-4 py-3 align-top max-w-xs">
-                        <div class="truncate font-medium text-gray-800">{{ $ticket->subject }}</div>
-                        <div class="text-xs text-gray-500 truncate">{{ $ticket->subcategory->name ?? ($ticket->custom_issue ?? '—') }}</div>
-                    </td>
-                    <td class="px-4 py-3 align-top text-xs text-gray-600">{{ $ticket->category->name ?? '—' }}</td>
-                    <td class="px-4 py-3 align-top">
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold
-                            {{ $ticket->priority === 'critical' ? 'bg-red-100 text-red-700' : ($ticket->priority === 'high' ? 'bg-orange-100 text-orange-700' : ($ticket->priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700')) }}">
-                            {{ ucfirst($ticket->priority) }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 align-top">
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ ucfirst(str_replace('_',' ',$ticket->status)) }}</span>
-                    </td>
-                    <td class="px-4 py-3 align-top text-xs text-gray-600">
-                        {{ $ticket->branch->name ?? '—' }}<br>
-                        <span class="text-gray-400">{{ $ticket->branch->region->name ?? '—' }}</span>
-                    </td>
-                    <td class="px-4 py-3 align-top text-gray-600">
-                        <div class="text-xs">{{ $ticket->creator->name ?? '—' }}</div>
-                        <div class="text-[10px] text-gray-400">{{ $ticket->employee_contact_phone ?? '' }}</div>
-                    </td>
-                    <td class="px-4 py-3 align-top text-gray-600">
-                        @if($canQuickAssign && !in_array($ticket->status, ['resolved','closed']) && $assignableUsers->isNotEmpty())
-                        <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="flex items-center gap-1">
-                            @csrf
-                            <select name="assigned_to" class="border border-gray-300 rounded px-1.5 py-1 text-xs bg-white w-32" onchange="if(this.value) this.form.submit()">
-                                <option value="" disabled {{ $ticket->assigned_to ? '' : 'selected' }}>— Assign —</option>
-                                @foreach($assignableUsers as $u)
-                                <option value="{{ $u->id }}" {{ $ticket->assigned_to == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                                @endforeach
-                            </select>
-                        </form>
-                        @else
-                            <span class="text-xs">{{ $ticket->assignee->name ?? 'Unassigned' }}</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 align-top text-xs">
-                        @if(in_array($ticket->status, ['resolved','closed']))
-                            <span class="text-green-600">✓ done</span>
-                        @elseif($ticket->isOverdue())
-                            <span class="text-red-600 font-semibold">Violated</span>
-                        @else
-                            @php $p = $ticket->tatProgress(); @endphp
-                            <div class="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                <div class="h-1.5 {{ $p >= 75 ? 'bg-yellow-500' : 'bg-green-500' }}" style="width: {{ $p }}%"></div>
-                            </div>
-                            <span class="text-[10px] text-gray-500">{{ $p }}%</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 align-top text-gray-400 text-xs">{{ $ticket->created_at->diffForHumans() }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="10" class="px-6 py-10 text-center">
-                        <div class="text-gray-500 text-sm font-medium mb-1">No management tickets right now</div>
-                        <div class="text-gray-400 text-xs">Top-priority tickets raised or red-flagged by management will appear here automatically.</div>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+        @include('partials.dashboard-ticket-table', [
+            'tickets'         => $managementTickets,
+            'canQuickAssign'  => $canQuickAssign,
+            'assignableUsers' => $assignableUsers,
+            'emptyMessage'    => '<div class="text-gray-500 text-sm font-medium mb-1">No management tickets right now</div><div class="text-gray-400 text-xs">Top-priority tickets raised or red-flagged by management will appear here automatically.</div>',
+        ])
     </div>
-</div>
+</details>
+
+@if($projectStats !== null)
+{{-- Project Tickets — tickets linked to a project (Admin / CISO only). --}}
+<details id="dash-projects" class="dash-section bg-white rounded-lg shadow mb-4 md:mb-6 border-t-4 border-brand-500" open>
+    <summary class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 min-w-0">
+            <svg class="dash-chevron w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+            <h2 class="font-semibold text-gray-700">Project Tickets</h2>
+            <span class="text-xs text-gray-500 hidden sm:inline">— open tickets linked to a project</span>
+        </div>
+        <span class="text-xs px-2 py-0.5 bg-brand-50 text-brand-600 rounded-full font-semibold">{{ $projectTickets->count() }}</span>
+    </summary>
+    <div class="overflow-x-auto">
+        @include('partials.dashboard-ticket-table', [
+            'tickets'         => $projectTickets,
+            'canQuickAssign'  => $canQuickAssign,
+            'assignableUsers' => $assignableUsers,
+            'withProject'     => true,
+            'emptyMessage'    => 'No project-linked tickets are open right now. <a href="'.route('projects.index').'" class="text-brand-500">Browse projects</a>.',
+        ])
+    </div>
+</details>
+@endif
 
 {{-- Recent Tickets — excludes anything already shown above. --}}
-<div class="bg-white rounded-lg shadow">
-    <div class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
-        <h2 class="font-semibold text-gray-700">Recent Tickets</h2>
-        <a href="{{ route('tickets.create') }}" class="bg-brand-500 text-white text-sm px-3 py-2 rounded hover:bg-brand-600 btn-touch">+ New Ticket</a>
-    </div>
+<details id="dash-recent" class="dash-section bg-white rounded-lg shadow" open>
+    <summary class="px-4 md:px-6 py-3 md:py-4 border-b flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 min-w-0">
+            <svg class="dash-chevron w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <h2 class="font-semibold text-gray-700">Recent Tickets</h2>
+        </div>
+        <a href="{{ route('tickets.create') }}" onclick="event.stopPropagation()" class="bg-brand-500 text-white text-sm px-3 py-2 rounded hover:bg-brand-600 btn-touch">+ New Ticket</a>
+    </summary>
     <div class="overflow-x-auto">
-        <table class="w-full text-sm" data-mobile="cards">
-            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
-                <tr>
-                    <th class="px-4 py-3 text-left">Ticket #</th>
-                    <th class="px-4 py-3 text-left">Subject / Issue</th>
-                    <th class="px-4 py-3 text-left">Category</th>
-                    <th class="px-4 py-3 text-left">Priority</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-left">Branch / State</th>
-                    <th class="px-4 py-3 text-left">Raised By</th>
-                    <th class="px-4 py-3 text-left">Assignee</th>
-                    <th class="px-4 py-3 text-left">TAT</th>
-                    <th class="px-4 py-3 text-left">Age</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($recentTickets as $ticket)
-                @php $row = $renderRow($ticket, $canQuickAssign, $assignableUsers); @endphp
-                <tr class="{{ $row['rowClass'] }}">
-                    <td class="px-4 py-3 align-top">
-                        <a href="{{ route('tickets.show', $ticket) }}" class="text-brand-500 hover:underline font-mono text-xs inline-flex items-center gap-1">
-                            @if($ticket->is_red_flag)
-                            <svg class="w-3.5 h-3.5 text-red-600" fill="currentColor" viewBox="0 0 20 20" title="Red-flagged"><path d="M3 4a1 1 0 011-1h4.586A1 1 0 019.293 3.293L10 4h5a1 1 0 011 1v7a1 1 0 01-1 1h-5.586a1 1 0 01-.707-.293L9 12H4v5a1 1 0 11-2 0V4z"/></svg>
-                            @endif
-                            {{ $ticket->ticket_number }}
-                        </a>
-                        @if($row['isViolated'])
-                        <div class="mt-1"><span class="bg-red-600 text-white text-[8px] font-bold px-1 py-0.5 rounded">TAT VIOLATED</span></div>
-                        @endif
-                        <div class="text-[10px] text-gray-400 mt-0.5 uppercase">{{ ucfirst($ticket->support_type) }}</div>
-                    </td>
-                    <td class="px-4 py-3 align-top max-w-xs">
-                        <div class="truncate font-medium text-gray-800">{{ $ticket->subject }}</div>
-                        <div class="text-xs text-gray-500 truncate">{{ $ticket->subcategory->name ?? ($ticket->custom_issue ?? '—') }}</div>
-                    </td>
-                    <td class="px-4 py-3 align-top text-xs text-gray-600">{{ $ticket->category->name ?? '—' }}</td>
-                    <td class="px-4 py-3 align-top">
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold
-                            {{ $ticket->priority === 'critical' ? 'bg-red-100 text-red-700' : ($ticket->priority === 'high' ? 'bg-orange-100 text-orange-700' : ($ticket->priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700')) }}">
-                            {{ ucfirst($ticket->priority) }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 align-top">
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{{ ucfirst(str_replace('_',' ',$ticket->status)) }}</span>
-                    </td>
-                    <td class="px-4 py-3 align-top text-xs text-gray-600">
-                        {{ $ticket->branch->name ?? '—' }}<br>
-                        <span class="text-gray-400">{{ $ticket->branch->region->name ?? '—' }}</span>
-                    </td>
-                    <td class="px-4 py-3 align-top text-gray-600">
-                        <div class="text-xs">{{ $ticket->creator->name ?? '—' }}</div>
-                        <div class="text-[10px] text-gray-400">{{ $ticket->employee_contact_phone ?? '' }}</div>
-                    </td>
-                    <td class="px-4 py-3 align-top text-gray-600">
-                        @if($canQuickAssign && !in_array($ticket->status, ['resolved','closed']) && $assignableUsers->isNotEmpty())
-                        <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="flex items-center gap-1">
-                            @csrf
-                            <select name="assigned_to" class="border border-gray-300 rounded px-1.5 py-1 text-xs bg-white w-32" onchange="if(this.value) this.form.submit()">
-                                <option value="" disabled {{ $ticket->assigned_to ? '' : 'selected' }}>— Assign —</option>
-                                @foreach($assignableUsers as $u)
-                                <option value="{{ $u->id }}" {{ $ticket->assigned_to == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                                @endforeach
-                            </select>
-                        </form>
-                        @else
-                            <span class="text-xs">{{ $ticket->assignee->name ?? 'Unassigned' }}</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 align-top text-xs">
-                        @if(in_array($ticket->status, ['resolved','closed']))
-                            <span class="text-green-600">✓ done</span>
-                        @elseif($ticket->isOverdue())
-                            <span class="text-red-600 font-semibold">Violated</span>
-                        @else
-                            @php $p = $ticket->tatProgress(); @endphp
-                            <div class="w-16 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                <div class="h-1.5 {{ $p >= 75 ? 'bg-yellow-500' : 'bg-green-500' }}" style="width: {{ $p }}%"></div>
-                            </div>
-                            <span class="text-[10px] text-gray-500">{{ $p }}%</span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-3 align-top text-gray-400 text-xs">{{ $ticket->created_at->diffForHumans() }}</td>
-                </tr>
-                @empty
-                <tr><td colspan="10" class="px-6 py-8 text-center text-gray-400">No tickets yet. <a href="{{ route('tickets.create') }}" class="text-brand-500">Create one</a>.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        @include('partials.dashboard-ticket-table', [
+            'tickets'         => $recentTickets,
+            'canQuickAssign'  => $canQuickAssign,
+            'assignableUsers' => $assignableUsers,
+            'emptyMessage'    => 'No tickets yet. <a href="'.route('tickets.create').'" class="text-brand-500">Create one</a>.',
+        ])
     </div>
-</div>
+</details>
+
+<script>
+(function () {
+    // Remember which dashboard sections the user collapsed.
+    document.querySelectorAll('details.dash-section').forEach(function (d) {
+        var key = 'dashboard.section.' + d.id;
+        var saved = localStorage.getItem(key);
+        if (saved === 'closed') d.open = false;
+        if (saved === 'open')   d.open = true;
+        d.addEventListener('toggle', function () {
+            localStorage.setItem(key, d.open ? 'open' : 'closed');
+        });
+    });
+})();
+</script>
 @endsection

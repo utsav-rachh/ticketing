@@ -20,16 +20,43 @@ use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\WorkingHourController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect()->route('dashboard'));
+Route::get('/', function () {
+    // Developers land on their app launcher (CTS / ATS / Dialer); everyone
+    // else goes straight to the ticketing dashboard.
+    return auth()->user()?->isDeveloper()
+        ? redirect()->route('developer.home')
+        : redirect()->route('dashboard');
+})->middleware('auth');
 
 Route::middleware(['auth','verified'])->group(function () {
 
-    // Developer sandbox — isolated from the main app. Only role=developer
-    // can hit these routes; the post-login redirect sends them straight here.
+    // Developer area: an app launcher plus the modules being incubated under
+    // the developer role — ATS (asset management) and the Dialer (Smartping
+    // cloud telephony). Only role=developer reaches these. Developers can also
+    // use the main ticketing app ("CTS" on the launcher); those routes keep
+    // their own role gates, so a developer sees CTS at employee level.
     Route::middleware('role:developer')->prefix('developer')->name('developer.')->group(function () {
         Route::get('/',       [DeveloperController::class, 'home'])->name('home');
         Route::get('/assets', [DeveloperController::class, 'assets'])->name('assets');
-        Route::get('/dialer', [DeveloperController::class, 'dialer'])->name('dialer');
+
+        // --- Dialer module ---
+        Route::prefix('dialer')->name('dialer.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Developer\DialerController::class, 'index'])->name('home');
+            Route::post('/call', [\App\Http\Controllers\Developer\DialerController::class, 'call'])->name('call');
+            Route::post('/call/{dialerTicket}/hangup', [\App\Http\Controllers\Developer\DialerController::class, 'hangup'])->name('hangup');
+
+            // Customer database (manual add + CSV import with dedup)
+            Route::get('/customers',        [\App\Http\Controllers\Developer\DialerCustomerController::class, 'index'])->name('customers.index');
+            Route::post('/customers',       [\App\Http\Controllers\Developer\DialerCustomerController::class, 'store'])->name('customers.store');
+            Route::patch('/customers/{dialerCustomer}', [\App\Http\Controllers\Developer\DialerCustomerController::class, 'update'])->name('customers.update');
+            Route::get('/customers/import', [\App\Http\Controllers\Developer\DialerCustomerController::class, 'importForm'])->name('customers.import');
+            Route::post('/customers/import',[\App\Http\Controllers\Developer\DialerCustomerController::class, 'import'])->name('customers.import.store');
+
+            // Dialer tickets + call trail
+            Route::get('/tickets',                   [\App\Http\Controllers\Developer\DialerTicketController::class, 'index'])->name('tickets.index');
+            Route::get('/tickets/{dialerTicket}',    [\App\Http\Controllers\Developer\DialerTicketController::class, 'show'])->name('tickets.show');
+            Route::patch('/tickets/{dialerTicket}/notes', [\App\Http\Controllers\Developer\DialerTicketController::class, 'updateNotes'])->name('tickets.notes');
+        });
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

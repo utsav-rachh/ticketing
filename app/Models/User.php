@@ -47,8 +47,8 @@ class User extends Authenticatable
     public function canAssign(): bool    { return $this->isResolver() || $this->isAdmin(); }
     public function canExport(): bool    { return $this->isResolver() || $this->isAdmin(); }
     public function canApproveExpenses(): bool { return $this->isITHead() || $this->isAdmin() || $this->isManagement(); }
-    public function canManageAdmin(): bool     { return $this->isAdmin(); }
-    public function canViewAuditLogs(): bool   { return $this->isAdmin(); }
+    public function canManageAdmin(): bool     { return $this->isAdmin() || $this->isITHead(); }
+    public function canViewAuditLogs(): bool   { return $this->isAdmin() || $this->isITHead(); }
     public function canManageProjects(): bool  { return $this->isAdmin() || $this->isITHead(); }
 
     /**

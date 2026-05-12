@@ -87,8 +87,8 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/aging', [ReportController::class, 'agingReport'])->name('reports.aging');
     });
 
-    // Admin (admin role only)
-    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+    // Admin (admin role + IT Head — IT Head gets the full admin area)
+    Route::middleware('role:admin,it_head')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('regions', RegionController::class)->except(['show']);
         Route::resource('branches', BranchController::class)->except(['show']);

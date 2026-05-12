@@ -8,9 +8,22 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, ...$roles): mixed
     {
-        if (!$request->user() || !in_array($request->user()->role, $roles)) {
+        $user = $request->user();
+        if (!$user) {
             abort(403, 'Unauthorized');
         }
-        return $next($request);
+
+        // Direct role match (employee / resolver / admin / management / developer).
+        if (in_array($user->role, $roles, true)) {
+            return $next($request);
+        }
+
+        // Pseudo-role "it_head": an IT Head is a resolver with that level, but
+        // we let route groups opt them in explicitly (e.g. the admin area).
+        if (in_array('it_head', $roles, true) && $user->isITHead()) {
+            return $next($request);
+        }
+
+        abort(403, 'Unauthorized');
     }
 }

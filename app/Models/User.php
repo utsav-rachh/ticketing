@@ -42,10 +42,12 @@ class User extends Authenticatable
     public function isDeveloper(): bool  { return $this->role === 'developer'; }
     public function isJunior(): bool     { return $this->isResolver() && $this->resolver_level === 'junior'; }
     public function isTL(): bool         { return $this->isResolver() && $this->resolver_level === 'tl'; }
-    public function isITHead(): bool     { return $this->isResolver() && $this->resolver_level === 'it_head'; }
+    // An IT Head is identified by the resolver_level only — their base role may be
+    // 'resolver' or 'management' depending on how the account was set up.
+    public function isITHead(): bool     { return $this->resolver_level === 'it_head'; }
 
-    public function canAssign(): bool    { return $this->isResolver() || $this->isAdmin(); }
-    public function canExport(): bool    { return $this->isResolver() || $this->isAdmin(); }
+    public function canAssign(): bool    { return $this->isResolver() || $this->isAdmin() || $this->isITHead(); }
+    public function canExport(): bool    { return $this->isResolver() || $this->isAdmin() || $this->isITHead(); }
     public function canApproveExpenses(): bool { return $this->isITHead() || $this->isAdmin() || $this->isManagement(); }
     public function canManageAdmin(): bool     { return $this->isAdmin() || $this->isITHead(); }
     public function canViewAuditLogs(): bool   { return $this->isAdmin() || $this->isITHead(); }

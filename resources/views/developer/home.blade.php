@@ -55,7 +55,7 @@
         Sandbox rules
     </div>
     <ul class="text-xs text-slate-400 space-y-1 list-disc list-inside">
-        <li>Nothing here is visible to admin, IT Head, resolvers, management or employees yet.</li>
+        <li>Nothing here is visible to admin, CISO, resolvers, management or employees yet.</li>
         <li>Promote a feature only after the scope-of-work is signed off and tests pass.</li>
         <li>Reuse existing models (User, Branch, Ticket) where possible — don't duplicate org data.</li>
     </ul>

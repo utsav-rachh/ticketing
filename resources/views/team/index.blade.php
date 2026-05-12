@@ -9,14 +9,14 @@
     };
 @endphp
 
-{{-- IT Head card (sits above the support-type groups, full-width) --}}
-@if($itHead)
-@php $s = $statBlock($statsById[$itHead->id] ?? null); @endphp
+{{-- CISO card (sits above the support-type groups, full-width) --}}
+@if($ciso)
+@php $s = $statBlock($statsById[$ciso->id] ?? null); @endphp
 <div class="bg-white rounded-lg shadow border-l-4 border-brand-500 p-4 md:p-5 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
-        <div class="text-[10px] uppercase tracking-wider text-brand-500 font-semibold">IT Head</div>
-        <div class="font-semibold text-gray-800 text-base md:text-lg">{{ $itHead->name }}</div>
-        <div class="text-xs text-gray-500 break-all">{{ $itHead->email }} · {{ $itHead->employee_id ?? '—' }}</div>
+        <div class="text-[10px] uppercase tracking-wider text-brand-500 font-semibold">CISO</div>
+        <div class="font-semibold text-gray-800 text-base md:text-lg">{{ $ciso->name }}</div>
+        <div class="text-xs text-gray-500 break-all">{{ $ciso->email }} · {{ $ciso->employee_id ?? '—' }}</div>
     </div>
     <div class="grid grid-cols-4 gap-2 md:gap-4 text-center text-sm">
         <div><div class="font-bold text-gray-700">{{ $s['total'] }}</div><div class="text-[10px] text-gray-400 uppercase">Total</div></div>

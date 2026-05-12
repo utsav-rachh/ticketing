@@ -52,7 +52,7 @@ class Ticket extends Model
 
     public function scopeVisibleTo($query, User $user)
     {
-        if ($user->isAdmin() || $user->isITHead()) {
+        if ($user->isAdmin() || $user->isCISO()) {
             return $query;
         }
         if ($user->isTL()) {

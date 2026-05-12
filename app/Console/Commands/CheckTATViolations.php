@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Notification;
 class CheckTATViolations extends Command
 {
     protected $signature = 'itsm:check-tat';
-    protected $description = 'Per-status, working-hour-aware SLA checker. Notifies TLs at warning threshold and TLs+IT Heads at breach. Internal only.';
+    protected $description = 'Per-status, working-hour-aware SLA checker. Notifies TLs at warning threshold and TLs+CISO at breach. Internal only.';
 
     public function handle(TatCalculator $tat, WorkingHoursService $working): void
     {
@@ -43,7 +43,7 @@ class CheckTATViolations extends Command
 
             $warningPct = $cfg->warning_threshold_pct ?? 80;
 
-            // VIOLATION (>= 100%): notify TL + IT Head, mark violated, log activity.
+            // VIOLATION (>= 100%): notify TL + CISO, mark violated, log activity.
             if ($pct >= 100 && !$ticket->is_tat_violated) {
                 $ticket->update(['is_tat_violated' => true, 'tat_notified_at' => now()]);
                 $violationsSent++;
@@ -52,11 +52,11 @@ class CheckTATViolations extends Command
                     'ticket_id'   => $ticket->id,
                     'user_id'     => $ticket->assigned_to ?? optional($ticket->creator)->id,
                     'action_type' => 'tat_violated',
-                    'description' => "[Internal] SLA violated for status '{$ticket->status}' — escalated to TL + IT Head",
+                    'description' => "[Internal] SLA violated for status '{$ticket->status}' — escalated to TL + CISO",
                 ]);
 
                 Notification::send(
-                    $this->internalRecipients($ticket, ['tl','it_head']),
+                    $this->internalRecipients($ticket, ['tl','ciso']),
                     new TATBreachedNotification($ticket, true)
                 );
                 continue;

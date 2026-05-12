@@ -8,7 +8,7 @@ use App\Models\User;
 /**
  * Auto-routes new tickets to the junior resolver who owns the
  * matching (support_type, region) pair. Falls back to the support_type TL
- * and then to the IT Head if no one fits.
+ * and then to the CISO if no one fits.
  */
 class TicketAssignmentService
 {
@@ -52,7 +52,7 @@ class TicketAssignmentService
                 ->first()
             ?: User::query()
                 ->where('role', 'resolver')
-                ->where('resolver_level', 'it_head')
+                ->where('resolver_level', 'ciso')
                 ->where('is_active', true)
                 ->first();
 

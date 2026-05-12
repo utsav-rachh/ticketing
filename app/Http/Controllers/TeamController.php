@@ -10,7 +10,7 @@ class TeamController extends Controller
 {
     /**
      * Hierarchy view of the resolver org. Visibility:
-     *   - Admin / IT Head: see the full tree (Application + Infrastructure groups)
+     *   - Admin / CISO: see the full tree (Application + Infrastructure groups)
      *   - TL: their own support_type group only (themselves + their juniors)
      *   - Junior: just themselves
      */
@@ -36,9 +36,9 @@ class TeamController extends Controller
             $groups[] = compact('type', 'label', 'tl', 'juniors');
         }
 
-        $itHead = $resolvers->first(fn ($u) => $u->resolver_level === 'it_head');
+        $ciso = $resolvers->first(fn ($u) => $u->resolver_level === 'ciso');
 
-        return view('team.index', compact('groups', 'itHead', 'statsById'));
+        return view('team.index', compact('groups', 'ciso', 'statsById'));
     }
 
     public function memberTickets(Request $request, User $user)
@@ -55,7 +55,7 @@ class TeamController extends Controller
     {
         $base = User::where('role', 'resolver')->where('is_active', true);
 
-        if ($user->isAdmin() || $user->isITHead()) {
+        if ($user->isAdmin() || $user->isCISO()) {
             return $base->orderBy('resolver_level')->orderBy('name')->get();
         }
         if ($user->isTL()) {

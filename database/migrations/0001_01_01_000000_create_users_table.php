@@ -21,7 +21,7 @@ return new class extends Migration
             // a DDL migration on every new role (MySQL still gets the ENUM constraint
             // via the role-extension migrations under database/migrations).
             $table->string('role', 30)->default('employee');
-            $table->enum('resolver_level', ['junior','tl','it_head'])->nullable();
+            $table->enum('resolver_level', ['junior','tl','ciso'])->nullable();
             $table->string('department', 100)->nullable();
             $table->unsignedBigInteger('reports_to')->nullable();
             $table->string('phone', 20)->nullable();

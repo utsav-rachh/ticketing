@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
  * Developer sandbox — isolated workspace where the developer prototypes
  * features (Asset Management, Dialer) before they ship to other roles.
  *
- * Routes are gated by `role:developer` middleware so admin / IT Head /
+ * Routes are gated by `role:developer` middleware so admin / CISO /
  * resolvers / employees never see this area.
  */
 class DeveloperController extends Controller

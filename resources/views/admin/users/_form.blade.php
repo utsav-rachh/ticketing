@@ -38,7 +38,7 @@
         <span class="text-xs font-medium text-gray-500">Resolver Level (resolver only)</span>
         <select name="resolver_level" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             <option value="">—</option>
-            @foreach(['junior' => 'Junior','tl' => 'TL','it_head' => 'IT Head'] as $v => $l)
+            @foreach(['junior' => 'Junior','tl' => 'TL','ciso' => 'CISO'] as $v => $l)
             <option value="{{ $v }}" {{ old('resolver_level', $user->resolver_level ?? '') === $v ? 'selected' : '' }}>{{ $l }}</option>
             @endforeach
         </select>

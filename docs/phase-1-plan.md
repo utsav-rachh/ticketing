@@ -2,14 +2,14 @@
 
 ## Context
 
-The current Laravel 13 ticketing app (`c:\xampp\htdocs\ticketing`) is functional but was built around a flat 2-role model (employee / resolver) with manual priority selection, no branch hierarchy, no resolver sub-levels, no sidebar collapse, no Excel export wired up, and no TAT breach scheduling. After field/office review, a large set of business requirements was surfaced: branch-aware visibility, a split of admin vs. resolver duties, a resolver hierarchy with auto-escalation, fixed (non-user-editable) priority with MD red-flagging, a procurement "Hold" status that pauses TAT, a merged activity-timeline/status-update UX, employee-side attachments & notes, auto-assignment by region, expense approval (IT infra only, with IT Head approval), audit logs, collapsible sidebar with branding, and better reports. This plan delivers the essentials now (Phase 1) and defers genuinely deep or ML-heavy work to Phase 2, taking Zoho Desk as the "simple-but-solid" reference — we are *not* replicating Zoho, just using it as a feature sanity check.
+The current Laravel 13 ticketing app (`c:\xampp\htdocs\ticketing`) is functional but was built around a flat 2-role model (employee / resolver) with manual priority selection, no branch hierarchy, no resolver sub-levels, no sidebar collapse, no Excel export wired up, and no TAT breach scheduling. After field/office review, a large set of business requirements was surfaced: branch-aware visibility, a split of admin vs. resolver duties, a resolver hierarchy with auto-escalation, fixed (non-user-editable) priority with MD red-flagging, a procurement "Hold" status that pauses TAT, a merged activity-timeline/status-update UX, employee-side attachments & notes, auto-assignment by region, expense approval (IT infra only, with CISO approval), audit logs, collapsible sidebar with branding, and better reports. This plan delivers the essentials now (Phase 1) and defers genuinely deep or ML-heavy work to Phase 2, taking Zoho Desk as the "simple-but-solid" reference — we are *not* replicating Zoho, just using it as a feature sanity check.
 
 **User clarifications captured:**
 - Hierarchy: **Branch → Regional → Head (3 levels)**
-- Resolver sub-hierarchy: **Junior → TL → IT Head**
-- Admin is a **separate role** (not the IT Head)
+- Resolver sub-hierarchy: **Junior → TL → CISO**
+- Admin is a **separate role** (not the CISO)
 - **Application Support tickets have NO expenses**; only IT Infrastructure & Admin categories can log expenses
-- **Expense approval**: IT Head approves (Junior submits → IT Head approves/rejects)
+- **Expense approval**: CISO approves (Junior submits → CISO approves/rejects)
 - **Category auto-suggest** → **deferred to Phase 2**
 - **MD/Management** identified by `is_management` flag on user; their tickets auto-set to `critical` + red-flagged
 - Admin needs full CRUD over categories & subcategories
@@ -29,7 +29,7 @@ New tables:
 - `audit_logs` — id, user_id, auditable_type, auditable_id, action, changes (json), ip, user_agent, created_at *(admin-visible audit trail)*
 
 Column additions:
-- `users`: add `branch_id` (FK nullable), `region_id` (FK nullable), `employee_id` (string), `is_management` (bool, default false), `resolver_level` (enum: junior/tl/it_head, nullable), `assigned_region_id` (FK nullable, used for auto-assignment routing), `assigned_support_type` (enum: application/infrastructure/admin, nullable)
+- `users`: add `branch_id` (FK nullable), `region_id` (FK nullable), `employee_id` (string), `is_management` (bool, default false), `resolver_level` (enum: junior/tl/ciso, nullable), `assigned_region_id` (FK nullable, used for auto-assignment routing), `assigned_support_type` (enum: application/infrastructure/admin, nullable)
 - `users.role` enum: extend to `employee | resolver | admin` (migration changes enum signature)
 - `tickets`: add `branch_id` (FK), `vendor_id` (FK nullable), `is_red_flag` (bool, default false), `hold_started_at` (timestamp nullable), `hold_total_seconds` (int, default 0) *(running counter of paused TAT)*, `employee_contact_name`, `employee_contact_phone`, `employee_contact_email` *(optional "on behalf" fields — normally auto-filled from creator but editable)*
 - `tickets.status` enum: add `hold` (infrastructure only — enforced in validator, not DB)
@@ -38,9 +38,9 @@ Column additions:
 ### 2. Models & policies
 
 - New: `Region`, `Branch`, `Vendor`, `TicketUpdate`, `AuditLog`
-- `User`: add relationships (`branch`, `region`, `subordinates` stays, `assignedRegion`); helpers `isAdmin()`, `isResolver()`, `isJunior()`, `isTL()`, `isITHead()`, `isManagement()`, `visibleBranchIds()`
+- `User`: add relationships (`branch`, `region`, `subordinates` stays, `assignedRegion`); helpers `isAdmin()`, `isResolver()`, `isJunior()`, `isTL()`, `isCISO()`, `isManagement()`, `visibleBranchIds()`
 - `Ticket`: add `branch`, `region` (via branch), `vendor`, `updates` relations; scope `visibleTo($user)` rewritten:
-  - admin/it_head: all tickets
+  - admin/ciso: all tickets
   - tl: tickets assigned to their team OR within their support_type
   - junior: only tickets assigned to self
   - employee: tickets they created OR raised from any user in branches they can see (branch → regional → head hierarchy via their own `branch_id`/`region_id`)
@@ -93,10 +93,10 @@ On [resources/views/tickets/show.blade.php](resources/views/tickets/show.blade.p
 ### 7. Role & hierarchy changes
 
 - New role: `admin` (full CRUD on users, categories, subcategories, regions, branches, vendors, TAT configs; can view audit logs; cannot by default be assigned tickets)
-- Resolver gains `resolver_level` (junior / tl / it_head)
+- Resolver gains `resolver_level` (junior / tl / ciso)
 - Route middleware extended: `role:admin`, `role:resolver`, and a combined `role:admin,resolver`
 - Admin routes split under `/admin/*` — users, categories, subcategories, regions, branches, vendors, tat-config, audit-logs
-- Resolver-only routes: `/tickets`, `/team`, `/reports`, `/expenses/approvals` (IT Head only)
+- Resolver-only routes: `/tickets`, `/team`, `/reports`, `/expenses/approvals` (CISO only)
 
 ### 8. Auto-assignment & escalation
 
@@ -108,15 +108,15 @@ On [resources/views/tickets/show.blade.php](resources/views/tickets/show.blade.p
 
 Escalation (`app/Console/Commands/CheckTATEscalation.php`, scheduled every 15 min in `routes/console.php`):
 - When ticket past `warning_threshold` (75%/80% of TAT, already in `tat_configurations`) and not resolved → notify assignee's TL
-- When past 100% (TAT violated) and not resolved → notify IT Head + set `is_tat_violated = true`
+- When past 100% (TAT violated) and not resolved → notify CISO + set `is_tat_violated = true`
 - Uses existing `TATBreachedNotification` (now actually fired — today the job exists but is never scheduled)
 
 ### 9. Notifications — turn on
 
 - Wire `TATBreachedNotification` into the scheduled command above
 - Extend `TicketAssignedNotification` recipients to include the TL (cc)
-- New `ManagementTicketNotification` — fires to IT Head + TL immediately when `is_management = true` creator raises a ticket
-- New `ExpenseSubmittedNotification` → IT Head; `ExpenseDecisionNotification` → submitting junior
+- New `ManagementTicketNotification` — fires to CISO + TL immediately when `is_management = true` creator raises a ticket
+- New `ExpenseSubmittedNotification` → CISO; `ExpenseDecisionNotification` → submitting junior
 - Keep existing `TicketStatusNotification`; also include hold transitions
 - Frontend: keep the bell icon; add unread count polling every 60s (simple `setInterval` fetch to a JSON endpoint — no Livewire required)
 
@@ -124,8 +124,8 @@ Escalation (`app/Console/Commands/CheckTATEscalation.php`, scheduled every 15 mi
 
 - Hide the "Add Expense" UI on Application Support tickets (server-side enforced in `TicketController@addExpense`)
 - Expense form requires: amount, description, date, **invoice attachment** (required)
-- On submit: `status = pending`, notify IT Head
-- New page: `/expenses/approvals` (IT Head only) — list pending expenses; approve/reject with optional reason
+- On submit: `status = pending`, notify CISO
+- New page: `/expenses/approvals` (CISO only) — list pending expenses; approve/reject with optional reason
 - `ExpenseController@approve` / `@reject` — audits in `audit_logs`; notifies submitter
 - Reports include only **approved** expenses in totals (pending shown separately)
 
@@ -144,7 +144,7 @@ Escalation (`app/Console/Commands/CheckTATEscalation.php`, scheduled every 15 mi
 - Role-aware widgets:
   - employee: their branch's counts; recent own tickets
   - junior/tl: their queue with aging (created_at → now, colored by TAT %)
-  - it_head/admin: company-wide with region breakdown + pending expense approvals count
+  - ciso/admin: company-wide with region breakdown + pending expense approvals count
 - Simple bar chart (tickets by support_type, last 30 days) using a tiny inline SVG or Chart.js CDN — keep it minimal
 
 ### 13. Collapsible sidebar + branding
@@ -185,7 +185,7 @@ Currently `TicketController@export` returns 404 and `maatwebsite/excel` is alrea
 
 ### 17. Seeders
 
-- Update `UserSeeder`: create 1 admin, 1 IT Head, 1 TL (application), 1 TL (infrastructure), 2 juniors, 1 management user, existing employee + resolver preserved
+- Update `UserSeeder`: create 1 admin, 1 CISO, 1 TL (application), 1 TL (infrastructure), 2 juniors, 1 management user, existing employee + resolver preserved
 - New `RegionSeeder`, `BranchSeeder` (4 regions, ~2 branches each to match "four states" described)
 - New `VendorSeeder` (2–3 sample vendors)
 - Extend `SubcategorySeeder` to add "Others" under every category
@@ -250,12 +250,12 @@ These were discussed but are explicitly out of scope for Phase 1 per the user's 
 
 After Phase 1 implementation:
 
-1. **Migrations & seeders:** `php artisan migrate:fresh --seed` runs clean; log in as each role (employee, junior, tl, it_head, admin, management) — all credentials listed in updated seeder.
+1. **Migrations & seeders:** `php artisan migrate:fresh --seed` runs clean; log in as each role (employee, junior, tl, ciso, admin, management) — all credentials listed in updated seeder.
 2. **Ticket creation:** as an employee tied to a branch, create a ticket: no priority selector visible; priority correct per subcategory; "Others" subcategory requires custom issue. As a management user, ticket is auto-critical and red-flagged.
 3. **Auto-assignment:** ticket from Region A / Application → goes to the Region-A Application junior; verify via ticket detail + notification.
 4. **Hold flow (infrastructure):** move ticket to `hold`, wait, move back — `hold_total_seconds` increments; TAT countdown pauses on the UI; `isOverdue()` accounts for the pause.
-5. **Expense flow:** on an application ticket → add-expense UI hidden. On infrastructure ticket: junior submits with invoice → IT Head gets notification → approves → submitter gets notification → approved amount reflects in reports.
-6. **Escalation:** set a test ticket's TAT to 1 minute via `TatConfiguration`, let scheduler fire (or run `php artisan tickets:check-escalation` manually) → TL gets warning notification, then IT Head gets violation notification after threshold crossed.
+5. **Expense flow:** on an application ticket → add-expense UI hidden. On infrastructure ticket: junior submits with invoice → CISO gets notification → approves → submitter gets notification → approved amount reflects in reports.
+6. **Escalation:** set a test ticket's TAT to 1 minute via `TatConfiguration`, let scheduler fire (or run `php artisan tickets:check-escalation` manually) → TL gets warning notification, then CISO gets violation notification after threshold crossed.
 7. **Sidebar:** verify default collapsed, hamburger at bottom, company name + "Developed by 5P Media" visible when expanded.
 8. **Merged update form:** post only a note → timeline entry recorded with no status change; post only a status → same; post both → single entry with both fields.
 9. **Employee interaction:** as an employee on own ticket, add a note + attachment; as resolver, see them in the timeline.

@@ -51,11 +51,11 @@ class DeveloperRoleTest extends TestCase
         $this->actingAs($admin)->get(route('developer.home'))->assertForbidden();
     }
 
-    public function test_it_head_cannot_open_developer_sandbox(): void
+    public function test_ciso_cannot_open_developer_sandbox(): void
     {
-        $itHead = $this->makeUser('resolver', ['resolver_level' => 'it_head']);
+        $ciso = $this->makeUser('resolver', ['resolver_level' => 'ciso']);
 
-        $this->actingAs($itHead)->get(route('developer.home'))->assertForbidden();
+        $this->actingAs($ciso)->get(route('developer.home'))->assertForbidden();
     }
 
     public function test_developer_is_redirected_away_from_main_dashboard(): void

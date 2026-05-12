@@ -74,7 +74,7 @@ class UserController extends Controller
             'email'                 => 'required|email|unique:users,email' . ($id ? ",{$id}" : ''),
             'password'              => $creating ? 'required|min:6' : 'nullable|min:6',
             'role'                  => 'required|in:employee,resolver,admin,management',
-            'resolver_level'        => 'nullable|in:junior,tl,it_head',
+            'resolver_level'        => 'nullable|in:junior,tl,ciso',
             'department'            => 'nullable|string|max:100',
             'reports_to'            => 'nullable|exists:users,id',
             'phone'                 => 'nullable|string|max:20',

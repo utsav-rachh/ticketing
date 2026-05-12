@@ -42,27 +42,27 @@ class User extends Authenticatable
     public function isDeveloper(): bool  { return $this->role === 'developer'; }
     public function isJunior(): bool     { return $this->isResolver() && $this->resolver_level === 'junior'; }
     public function isTL(): bool         { return $this->isResolver() && $this->resolver_level === 'tl'; }
-    // An IT Head is identified by the resolver_level only — their base role may be
+    // A CISO is identified by the resolver_level only — their base role may be
     // 'resolver' or 'management' depending on how the account was set up.
-    public function isITHead(): bool     { return $this->resolver_level === 'it_head'; }
+    public function isCISO(): bool       { return $this->resolver_level === 'ciso'; }
 
-    public function canAssign(): bool    { return $this->isResolver() || $this->isAdmin() || $this->isITHead(); }
-    public function canExport(): bool    { return $this->isResolver() || $this->isAdmin() || $this->isITHead(); }
-    public function canApproveExpenses(): bool { return $this->isITHead() || $this->isAdmin() || $this->isManagement(); }
-    public function canManageAdmin(): bool     { return $this->isAdmin() || $this->isITHead(); }
-    public function canViewAuditLogs(): bool   { return $this->isAdmin() || $this->isITHead(); }
-    public function canManageProjects(): bool  { return $this->isAdmin() || $this->isITHead(); }
+    public function canAssign(): bool    { return $this->isResolver() || $this->isAdmin() || $this->isCISO(); }
+    public function canExport(): bool    { return $this->isResolver() || $this->isAdmin() || $this->isCISO(); }
+    public function canApproveExpenses(): bool { return $this->isCISO() || $this->isAdmin() || $this->isManagement(); }
+    public function canManageAdmin(): bool     { return $this->isAdmin() || $this->isCISO(); }
+    public function canViewAuditLogs(): bool   { return $this->isAdmin() || $this->isCISO(); }
+    public function canManageProjects(): bool  { return $this->isAdmin() || $this->isCISO(); }
 
     /**
      * Branch ids this user can see tickets for, per the 3-level
      * Branch -> Regional -> Head hierarchy.
      *   - employee: their own branch
      *   - regional (no resolver_level but region_id set w/ no branch): all branches in region
-     *   - head/admin/it_head: every branch
+     *   - head/admin/ciso: every branch
      */
     public function visibleBranchIds(): array
     {
-        if ($this->isAdmin() || $this->isITHead()) {
+        if ($this->isAdmin() || $this->isCISO()) {
             return Branch::query()->pluck('id')->all();
         }
         if ($this->branch_id) {

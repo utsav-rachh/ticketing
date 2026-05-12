@@ -14,7 +14,7 @@ class TicketPolicy
 
     public function view(User $user, Ticket $ticket): bool
     {
-        if ($user->isAdmin() || $user->isITHead()) return true;
+        if ($user->isAdmin() || $user->isCISO()) return true;
         if ($user->isTL()) {
             return $ticket->assigned_to === $user->id
                 || $ticket->support_type === $user->assigned_support_type;
@@ -36,9 +36,8 @@ class TicketPolicy
     public function updateStatus(User $user, Ticket $ticket): bool
     {
         if ($ticket->isClosed()) return false;
-        if ($user->isAdmin()) return true;
+        if ($user->isAdmin() || $user->isCISO()) return true;
         if (!$user->isResolver()) return false;
-        if ($user->isITHead()) return true;
         if ($user->isTL()) return $ticket->support_type === $user->assigned_support_type;
         return $ticket->assigned_to === $user->id;
     }
@@ -87,12 +86,12 @@ class TicketPolicy
     public function toggleRedFlag(User $user, Ticket $ticket): bool
     {
         if ($ticket->isClosed()) return false;
-        return $user->isAdmin() || $user->isITHead();
+        return $user->isAdmin() || $user->isCISO();
     }
 
     /**
      * Linking tickets to projects (and creating a new project inline) is
-     * an Admin / IT Head only action.
+     * an Admin / CISO only action.
      */
     public function linkProject(User $user): bool
     {
@@ -111,13 +110,13 @@ class TicketPolicy
 
     /**
      * Close: the creator can close a resolved/reopened ticket, and so can
-     * the assigned resolver / TL / IT Head / admin.
+     * the assigned resolver / TL / CISO / admin.
      */
     public function close(User $user, Ticket $ticket): bool
     {
         if (!in_array($ticket->status, ['resolved','reopen'], true)) return false;
         if ($ticket->created_by === $user->id) return true;
-        if ($user->isAdmin() || $user->isITHead()) return true;
+        if ($user->isAdmin() || $user->isCISO()) return true;
         if ($user->isTL()) return $ticket->support_type === $user->assigned_support_type;
         if ($user->isResolver()) return $ticket->assigned_to === $user->id;
         return false;

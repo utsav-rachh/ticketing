@@ -80,12 +80,12 @@ class ProjectTest extends TestCase
         ], $overrides));
     }
 
-    private function makeITHead(): User
+    private function makeCISO(): User
     {
         return $this->makeUser('resolver', [
-            'resolver_level' => 'it_head',
-            'name'           => 'IT Head',
-            'email'          => 'ithead_' . uniqid() . '@altumcredo.test',
+            'resolver_level' => 'ciso',
+            'name'           => 'CISO',
+            'email'          => 'ciso_' . uniqid() . '@altumcredo.test',
         ]);
     }
 
@@ -97,11 +97,11 @@ class ProjectTest extends TestCase
         ]);
     }
 
-    public function test_it_head_can_view_projects_index(): void
+    public function test_ciso_can_view_projects_index(): void
     {
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
 
-        $this->actingAs($itHead)
+        $this->actingAs($ciso)
             ->get(route('projects.index'))
             ->assertOk()
             ->assertSee('Projects');
@@ -144,9 +144,9 @@ class ProjectTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_it_head_can_create_a_project(): void
+    public function test_ciso_can_create_a_project(): void
     {
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
         $owner  = $this->makeManagementOwner();
 
         $payload = [
@@ -158,25 +158,25 @@ class ProjectTest extends TestCase
             'end_date'    => now()->addMonths(2)->toDateString(),
         ];
 
-        $response = $this->actingAs($itHead)
+        $response = $this->actingAs($ciso)
             ->post(route('projects.store'), $payload);
 
         $project = Project::firstWhere('name', 'LMS 2.0 Migration');
         $this->assertNotNull($project);
         $this->assertSame('ACHFPL-PRJ-0001', $project->number);
         $this->assertSame($owner->id, $project->owner_id);
-        $this->assertSame($itHead->id, $project->created_by);
+        $this->assertSame($ciso->id, $project->created_by);
 
         $response->assertRedirect(route('projects.show', $project));
     }
 
     public function test_project_number_is_sequential(): void
     {
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
         $owner  = $this->makeManagementOwner();
 
         foreach (['Alpha', 'Beta', 'Gamma'] as $name) {
-            $this->actingAs($itHead)->post(route('projects.store'), [
+            $this->actingAs($ciso)->post(route('projects.store'), [
                 'name'     => $name,
                 'owner_id' => $owner->id,
                 'status'   => 'active',
@@ -187,9 +187,9 @@ class ProjectTest extends TestCase
         $this->assertSame(['ACHFPL-PRJ-0001', 'ACHFPL-PRJ-0002', 'ACHFPL-PRJ-0003'], $numbers);
     }
 
-    public function test_it_head_can_view_project_detail(): void
+    public function test_ciso_can_view_project_detail(): void
     {
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
         $owner  = $this->makeManagementOwner();
 
         $project = Project::create([
@@ -198,10 +198,10 @@ class ProjectTest extends TestCase
             'description' => null,
             'owner_id'    => $owner->id,
             'status'      => 'active',
-            'created_by'  => $itHead->id,
+            'created_by'  => $ciso->id,
         ]);
 
-        $this->actingAs($itHead)
+        $this->actingAs($ciso)
             ->get(route('projects.show', $project))
             ->assertOk()
             ->assertSee('Network Refresh');
@@ -209,7 +209,7 @@ class ProjectTest extends TestCase
 
     public function test_create_ticket_linked_to_existing_project(): void
     {
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
         $owner  = $this->makeManagementOwner();
 
         $project = Project::create([
@@ -217,7 +217,7 @@ class ProjectTest extends TestCase
             'name'        => 'Aadhaar Connector Stabilisation',
             'owner_id'    => $owner->id,
             'status'      => 'active',
-            'created_by'  => $itHead->id,
+            'created_by'  => $ciso->id,
         ]);
 
         $payload = [
@@ -229,13 +229,13 @@ class ProjectTest extends TestCase
             'subject'                      => 'Receipt failure',
             'description'                  => 'Receipt generation broken after deploy',
             'employee_contact_employee_id' => 'EMP-1',
-            'employee_contact_name'        => $itHead->name,
+            'employee_contact_name'        => $ciso->name,
             'employee_contact_phone'       => '9999999999',
             'project_mode'                 => 'existing',
             'project_id'                   => $project->id,
         ];
 
-        $this->actingAs($itHead)
+        $this->actingAs($ciso)
             ->post(route('tickets.store'), $payload)
             ->assertRedirect();
 
@@ -246,7 +246,7 @@ class ProjectTest extends TestCase
 
     public function test_create_ticket_with_inline_new_project_persists_both_atomically(): void
     {
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
         $owner  = $this->makeManagementOwner();
 
         $payload = [
@@ -258,7 +258,7 @@ class ProjectTest extends TestCase
             'subject'                      => 'Ticket spawning new project',
             'description'                  => 'Should create project + ticket in one go',
             'employee_contact_employee_id' => 'EMP-2',
-            'employee_contact_name'        => $itHead->name,
+            'employee_contact_name'        => $ciso->name,
             'employee_contact_phone'       => '8888888888',
             'project_mode'                 => 'new',
             'new_project_name'             => 'Inline Project',
@@ -266,7 +266,7 @@ class ProjectTest extends TestCase
             'new_project_description'      => 'Created inline from ticket form',
         ];
 
-        $this->actingAs($itHead)
+        $this->actingAs($ciso)
             ->post(route('tickets.store'), $payload)
             ->assertRedirect();
 
@@ -282,7 +282,7 @@ class ProjectTest extends TestCase
     public function test_junior_resolver_cannot_link_ticket_to_project(): void
     {
         $junior = $this->makeUser('resolver', ['resolver_level' => 'junior']);
-        $itHead = $this->makeITHead();
+        $ciso = $this->makeCISO();
         $owner  = $this->makeManagementOwner();
 
         $project = Project::create([
@@ -290,7 +290,7 @@ class ProjectTest extends TestCase
             'name'        => 'Project A',
             'owner_id'    => $owner->id,
             'status'      => 'active',
-            'created_by'  => $itHead->id,
+            'created_by'  => $ciso->id,
         ]);
 
         $payload = [

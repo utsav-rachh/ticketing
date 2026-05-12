@@ -49,7 +49,7 @@ class DashboardController extends Controller
             ->with(['creator','category','subcategory','assignee','branch.region'])
             ->latest()->take(10)->get();
 
-        $canQuickAssign = $user->isAdmin() || $user->isITHead() || $user->isTL();
+        $canQuickAssign = $user->isAdmin() || $user->isCISO() || $user->isTL();
         $assignableUsers = collect();
         if ($canQuickAssign) {
             $q = User::where('role', 'resolver')->where('is_active', true);

@@ -282,10 +282,10 @@ class TicketController extends Controller
             }
         }
 
-        // Management tickets: red-flag notify IT Head + TLs immediately
+        // Management tickets: red-flag notify CISO + TLs immediately
         if ($isManagement) {
             $escalators = User::where('role','resolver')
-                ->whereIn('resolver_level', ['tl','it_head'])
+                ->whereIn('resolver_level', ['tl','ciso'])
                 ->where('is_active', true)->get();
             Notification::send($escalators, new ManagementTicketNotification($ticket));
         }
@@ -303,7 +303,7 @@ class TicketController extends Controller
             'expenses.addedBy','expenses.approvedBy','expenses.requestedApprover','attachments.uploader',
         ]);
 
-        // Approver picker pool for project-linked tickets (management + IT Head + project owner).
+        // Approver picker pool for project-linked tickets (management + CISO + project owner).
         $expenseApprovers = $ticket->project_id
             ? User::whereIn('id', $this->projectExpenseApproverIds($ticket))
                 ->orderBy('name')
@@ -567,7 +567,7 @@ class TicketController extends Controller
         ];
 
         // For project-linked tickets, the submitter chooses the approver from
-        // the allowed pool: management users + IT Head + project owner.
+        // the allowed pool: management users + CISO + project owner.
         if ($ticket->project_id) {
             $allowedApproverIds = $this->projectExpenseApproverIds($ticket->load('project'));
             $rules['requested_approver_id'] = ['required', 'integer', \Illuminate\Validation\Rule::in($allowedApproverIds)];
@@ -575,12 +575,12 @@ class TicketController extends Controller
 
         $data = $request->validate($rules);
 
-        // Resolve approver: project picker for project tickets, default IT Head otherwise.
+        // Resolve approver: project picker for project tickets, default CISO otherwise.
         if ($ticket->project_id) {
             $approverId = (int) $data['requested_approver_id'];
         } else {
             $approverId = User::where('role','resolver')
-                ->where('resolver_level','it_head')
+                ->where('resolver_level','ciso')
                 ->where('is_active', true)
                 ->value('id');
         }
@@ -605,7 +605,7 @@ class TicketController extends Controller
             'description' => 'Expense submitted for approval: ₹' . number_format($data['amount'], 2),
         ]);
 
-        // Notify the requested approver (IT Head fallback for non-project tickets).
+        // Notify the requested approver (CISO fallback for non-project tickets).
         if ($approverId && ($approver = User::find($approverId))) {
             $approver->notify(new ExpenseSubmittedNotification($expense));
         }
@@ -615,7 +615,7 @@ class TicketController extends Controller
 
     /**
      * Allowed approvers for an expense on a project-linked ticket:
-     * all management users + IT Head + project owner (deduped, active only).
+     * all management users + CISO + project owner (deduped, active only).
      *
      * @return int[]
      */
@@ -624,7 +624,7 @@ class TicketController extends Controller
         return User::where('is_active', true)
             ->where(function ($q) use ($ticket) {
                 $q->where('role', 'management')
-                  ->orWhere(fn ($qq) => $qq->where('role','resolver')->where('resolver_level','it_head'));
+                  ->orWhere(fn ($qq) => $qq->where('role','resolver')->where('resolver_level','ciso'));
                 if ($ticket->project && $ticket->project->owner_id) {
                     $q->orWhere('id', $ticket->project->owner_id);
                 }

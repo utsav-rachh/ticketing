@@ -18,9 +18,9 @@ class CheckRole
             return $next($request);
         }
 
-        // Pseudo-role "it_head": an IT Head is a resolver with that level, but
-        // we let route groups opt them in explicitly (e.g. the admin area).
-        if (in_array('it_head', $roles, true) && $user->isITHead()) {
+        // Pseudo-role "ciso": a CISO is identified by resolver_level, but we let
+        // route groups opt them in explicitly (e.g. the admin area).
+        if (in_array('ciso', $roles, true) && $user->isCISO()) {
             return $next($request);
         }
 

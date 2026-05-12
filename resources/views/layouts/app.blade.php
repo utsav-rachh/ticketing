@@ -116,7 +116,7 @@
             @endforeach
 
             @php
-                $canSeeTeamReports = $user->isResolver() || $user->isAdmin() || $user->isITHead();
+                $canSeeTeamReports = $user->isResolver() || $user->isAdmin() || $user->isCISO();
                 $showWorkSection   = $canSeeTeamReports || $user->canManageProjects() || $user->canApproveExpenses();
             @endphp
             @if($showWorkSection)

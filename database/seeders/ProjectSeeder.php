@@ -10,8 +10,8 @@ use Illuminate\Support\Carbon;
 /**
  * Seeds the Projects module + links a few demo tickets to projects.
  *
- * Owners are management users (per Projects feature spec). The IT Head
- * (Yogesh) is the creator since Admin + IT Head are the only roles
+ * Owners are management users (per Projects feature spec). The CISO
+ * (Yogesh) is the creator since Admin + CISO are the only roles
  * authorised to create projects.
  *
  * Idempotent: clears projects + unlinks tickets first, then re-seeds.
@@ -20,12 +20,12 @@ class ProjectSeeder extends Seeder
 {
     public function run(): void
     {
-        $itHead = User::where('email', 'yogesh@altumcredo.com')->first();
+        $ciso  = User::where('email', 'yogesh@altumcredo.com')->first();
         $admin  = User::where('email', 'admin@altumcredo.com')->first();
-        $creator = $itHead ?: $admin;
+        $creator = $ciso ?: $admin;
 
         if (!$creator) {
-            $this->command?->warn('ProjectSeeder: IT Head/Admin missing, run UserSeeder first.');
+            $this->command?->warn('ProjectSeeder: CISO/Admin missing, run UserSeeder first.');
             return;
         }
 

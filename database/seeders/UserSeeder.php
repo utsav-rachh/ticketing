@@ -25,13 +25,13 @@ class UserSeeder extends Seeder
         ]);
 
         // ─── Resolver hierarchy ───────────────────────────────────
-        // IT Head — supervises both TLs
+        // CISO — supervises both TLs
         $yogesh = $this->upsert([
             'name'           => 'Yogesh K Pawar',
             'email'          => 'yogesh@altumcredo.com',
-            'password'       => 'ithead@123',
+            'password'       => 'ciso@123',
             'role'           => 'resolver',
-            'resolver_level' => 'it_head',
+            'resolver_level' => 'ciso',
             'department'     => 'IT',
             'employee_id'    => '11362',
             'phone'          => '1234561234',

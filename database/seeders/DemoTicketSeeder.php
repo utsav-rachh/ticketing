@@ -27,7 +27,7 @@ class DemoTicketSeeder extends Seeder
     {
         // ── Resolve the user roster (created by UserSeeder) ──────────────
         $admin    = User::where('email', 'admin@altumcredo.com')->first();
-        $yogesh   = User::where('email', 'yogesh@altumcredo.com')->first();             // IT Head
+        $yogesh   = User::where('email', 'yogesh@altumcredo.com')->first();             // CISO
         $prashant = User::where('email', 'prashant.d@altumcredo.com')->first();         // App TL
         $vishalS  = User::where('email', 'vishal@altumcredo.com')->first();             // Infra TL
         $sayli    = User::where('email', 'sayali@altumcredo.com')->first();             // App Jr

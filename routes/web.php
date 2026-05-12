@@ -64,12 +64,12 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
 
-    // Projects (Admin + IT Head only — gated further by ProjectPolicy)
-    Route::middleware('role:resolver,admin')->group(function () {
+    // Projects (Admin + CISO only — gated further by ProjectPolicy)
+    Route::middleware('role:resolver,admin,ciso')->group(function () {
         Route::resource('projects', ProjectController::class);
     });
 
-    // Expense approval (IT Head / Admin / Management — page only shows
+    // Expense approval (CISO / Admin / Management — page only shows
     // expenses routed to the current user; per-row checks enforced inside).
     Route::middleware('role:resolver,admin,management')->prefix('expenses')->name('expenses.')->group(function () {
         Route::get('/approvals', [ExpenseApprovalController::class, 'index'])->name('approvals');
@@ -78,7 +78,7 @@ Route::middleware(['auth','verified'])->group(function () {
     });
 
     // Reports
-    Route::middleware('role:resolver,admin')->prefix('reports')->group(function () {
+    Route::middleware('role:resolver,admin,ciso')->prefix('reports')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/priority', [ReportController::class, 'priorityReport'])->name('reports.priority');
         Route::get('/tat', [ReportController::class, 'tatReport'])->name('reports.tat');
@@ -87,8 +87,8 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('/aging', [ReportController::class, 'agingReport'])->name('reports.aging');
     });
 
-    // Admin (admin role + IT Head — IT Head gets the full admin area)
-    Route::middleware('role:admin,it_head')->prefix('admin')->name('admin.')->group(function () {
+    // Admin (admin role + CISO — CISO gets the full admin area)
+    Route::middleware('role:admin,ciso')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('regions', RegionController::class)->except(['show']);
         Route::resource('branches', BranchController::class)->except(['show']);

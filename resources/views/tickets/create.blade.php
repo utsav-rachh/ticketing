@@ -252,7 +252,7 @@
                     </div>
 
                     @if($canLinkProject)
-                    {{-- Project (Admin / IT Head only) --}}
+                    {{-- Project (Admin / CISO only) --}}
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <h3 class="text-sm font-semibold text-blue-800 mb-3">Project</h3>
                         @php
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
     @endif
 });
 
-// Project mode toggle (Admin/IT Head only — radios only render when allowed).
+// Project mode toggle (Admin/CISO only — radios only render when allowed).
 (function () {
     const radios = document.querySelectorAll('.project-mode-radio');
     if (radios.length === 0) return;
